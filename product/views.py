@@ -59,9 +59,12 @@ def checkout_page(request):
     if request.method == 'POST':
         data = request.POST.copy()
         order_currency = Currency.objects.get(code = request.session.get('curr_id', 'UAH'))
-        is_promo = Promocode.is_promo(data['promo_code'])
-        if is_promo:
-            data['promo'] = Promocode.objects.get(code = data['promo_code'])
+        promocode = data.get('promo_code')
+        is_promo = False
+        if promocode:
+            is_promo = Promocode.is_promo(data.get('promo_code'))
+            if is_promo:
+                data['promo'] = Promocode.objects.get(code = data['promo_code'])
         discount = Promocode.get_discount(total_cost, data['promo_code']) if is_promo else 0
         data['user'] = request.user if request.user.is_authenticated else ''
         data['full_amount'] = total_cost
