@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+
+{% block content %}
+    {{ product.title }} <br>
+    {{ product.price|mul:rate_select_currency }} {{disp_select_currency}}<br>
+    <form method="POST" action="{% url 'basket_page' %}">
+        {% csrf_token %}
+        <input type="number" step='1' min=1 name='cnt' start='1' value="1">
+        <input type="hidden" name='type' value="add">
+        <input type="hidden" name='id' value={{product.id}}>
+        <button type='submit'>Добавить в корзину</button>
+    </form>
+{% endblock %}

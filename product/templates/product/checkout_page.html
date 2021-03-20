@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+
+{% block content %}
+<table class="table">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">№</th>
+        <th scope="col">Title</th>
+        <th scope="col">price</th>
+        <th scope="col">QTY</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for id, product in products.items%}
+            <tr>
+                <th scope="row">{{ forloop.counter }}</th>
+                <td><a href="{% url 'product_page' id %}">{{ product.title }}</a></td>
+                <td>{{ product.price|mul:rate_select_currency }} {{disp_select_currency}}</td>
+                <td>{{ product.qty }}</td>
+                <td><form action="{% url 'basket_page' %}" method="POST">
+                    {%csrf_token%}
+                    <input type="hidden" name='type' value="del">
+                    <input type="hidden" name='id' value={{product.id}}>
+                    <button type='submit'>X</button>
+                </form></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+  <form action="" method="POST">
+    {%csrf_token%}
+
+  {% for delivery in all_delivery%}
+    <input type="radio" name = 'delivery' value="{{delivery.id}}">
+    <b>{{delivery.name}}</b>
+    {{delivery.description}}
+    <br>
+  {%endfor%}
+  PROMO:  <input type="text" name ='promo_code'><br>
+  <button type="submit">Оформить</button>
+  </form>
+  <p>Общая стоимость: {{total_cost|mul:rate_select_currency |floatformat:2 }} {{disp_select_currency}}</p>
+  <script>document.getElementsByName("delivery")[0].checked = true;</script>
+{% endblock %}

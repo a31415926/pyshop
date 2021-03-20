@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+
+{% block content %}
+    hello
+    {{order.status}}
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Название</th>
+            <th scope="col">Стоимость в выбранной валюте за 1шт.</th>
+            <th scope="col">Кол-во</th>
+          </tr>
+        </thead>
+        <tbody>
+    
+            {%for good in goods%}
+            <tr>
+            <td><a href="{% url 'product_page' good.id_good %}" target="_blank">{{good.title_good}}</a></td>
+            <td>{{good.cost_on_curr}}</td>
+            <td>{{good.qty}}</td>
+            <td></td>
+            </tr>
+            {%endfor%}
+            
+            </tbody>
+        </table>
+        <form action="" method="POST">
+          {%csrf_token%}
+          <input type="hidden" name="id_order" value="{{ order.id }}">
+          {% if pay %}
+            <input type="hidden" name="mode" value = 'pay_order'>
+            <button type="submit" >Оплатить</button>
+          {%endif%}
+          {% if cancel_order %}
+            <input type="hidden" name="mode" value = 'cancel_order'>
+            <button type="submit" >Отменить</button>
+          {%endif%}
+
+        </form>
+{% endblock %}
