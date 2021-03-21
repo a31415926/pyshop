@@ -16,7 +16,22 @@
         <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
           <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#">Link</a>
+              <a class="nav-link" href="{% url 'all_ticket_page' %}">All tickets</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'support_main_page' %}">My tickets</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'invoices_page' %}">All invoices</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'checkout_page' %}">checkout</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'create_promocode_page' %}">Create PROMO</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'edit_price_in_category' %}">edit price</a>
             </li>
           </ul>
           <ul class="navbar-nav mr-auto mt-2 mt-lg-0">

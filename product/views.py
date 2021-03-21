@@ -3,6 +3,7 @@ from product.models import *
 from django.forms.models import model_to_dict
 from product import forms
 from accounts import models
+from product import services
 
 
 def shop_main_page(request):
@@ -51,7 +52,6 @@ def checkout_page(request):
     if not request.session.get('basket'):
         request.session['basket'] = {}
     basket = request.session['basket']
-    print(basket)
     total_cost = 0
     for i in basket.values():
         total_cost += i['qty'] * i['price']
@@ -68,7 +68,7 @@ def checkout_page(request):
         discount = Promocode.get_discount(total_cost, data['promo_code']) if is_promo else 0
         data['user'] = request.user if request.user.is_authenticated else ''
         data['full_amount'] = total_cost
-        data['total_amount'] = round(total_cost + discount, 2)
+        data['total_amount'] = total_cost + discount
         data['full_amount_on_curr'] = total_cost*order_currency.rate
         data['total_amount_on_curr'] = data['total_amount'] * order_currency.rate
         data['currency'] = order_currency
@@ -170,7 +170,7 @@ def edit_invoice(request, pk):
                         OrderItem.objects.get(pk = good.id).delete()
                         continue
                     edit_price = float(edit_price)
-                    full_amount += round(edit_price * int(edit_qty) / order.rate_currency, 2)
+                    full_amount += edit_price * int(edit_qty) / order.rate_currency
                     order_item = OrderItem.objects.get(pk = good.id)
                     order_item.qty = int(edit_qty)
                     order_item.cost_on_curr = edit_price
@@ -217,3 +217,22 @@ def create_promocode(request):
         if create_code.is_valid():
             create_code.save()
     return render(request, template, context={'form':form})
+
+
+def edit_price_in_category(request):
+    template = 'product/edit_price_in_category.html'
+    context = {}
+    categories = Categories.objects.all()
+    context['categories'] = categories
+    if request.method == 'POST':
+        data = request.POST
+        data_for_edit = services.ProductServices.data_preparation_edit_price(data)
+        products = services.ProductServices.get_all_products_in_categories(data_for_edit['lst_cats_id'])
+        services.ProductServices.edit_price_products(
+            products = products, 
+            type_edit = data_for_edit['type_edit'], 
+            value_edit = data_for_edit['value_edit'], 
+            is_edit_old_price = data_for_edit['is_edit_old_price']
+        )
+
+    return render(request, template, context)

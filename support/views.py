@@ -6,6 +6,8 @@ from support.models import *
 def support_main_page(request):
     template = 'support/main_page.html'
     context = {}
+    MyTicket = Ticket.objects.filter(user = request.user)
+    context['tickets'] = MyTicket
     if request.method == 'POST':
         data = request.POST
         ticket_sub = data.get('subject')

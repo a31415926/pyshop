@@ -14,4 +14,5 @@ urlpatterns = [
     path('shop/change_invoice/', change_invoice, name='change_invoice'),
     path('shop/invoice/<int:pk>/', get_invoice, name='invoice_page'),
     path('shop/invoice/<int:pk>/edit/', edit_invoice, name='invoice_edit_page'),
+    path('shop/edit_price_in_category/', edit_price_in_category, name='edit_price_in_category'),
 ]

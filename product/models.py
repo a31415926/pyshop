@@ -20,6 +20,11 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+    def save(self, *args, **kwargs):
+        self.price = round(self.price, 2)
+        self.old_price = round(self.old_price, 2)
+        super(Product, self).save(*args, **kwargs)
+
 
 class Categories(models.Model):
     name = models.CharField(max_length=250, default='Noname cat', unique=True)
