@@ -16,7 +16,7 @@ SECRET_KEY = '!%c$$78v36_ah)-1j8(hxg6u@*fk2*jnut5m$*z&fr^=jsdq%u'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['project-geek.herokuapp.com', '127.0.0.1']
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Application definition
