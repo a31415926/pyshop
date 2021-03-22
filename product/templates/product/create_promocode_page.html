@@ -4,12 +4,8 @@
 <form action="" method="POST">
     {%for field in form%}
         {%csrf_token%}
-        {%if field.name == 'start_promo' or field.name == end_promo%}
-        {{field|date:'Y-m-d'}} <br><br>
-        {%else%}
-        {{field}} <br><br>
-        {%endif%}
-    {%endfor%}
+        {{field}}
+        {%endfor%}
     <input type="submit" value="Отправить">
 </form>    
 {% endblock %}

@@ -65,6 +65,8 @@ TEMPLATES = [
     },
 ]
 
+LOGIN_REDIRECT_URL = '/shop/'
+
 WSGI_APPLICATION = 'shop.wsgi.application'
 
 

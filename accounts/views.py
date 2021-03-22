@@ -7,20 +7,18 @@ from django.contrib.auth import authenticate, login
 
 from accounts.forms import AuthUserForm, RegisterUserForm
 
-def test(request):
-    pass
 
 class SignUpView(generic.CreateView):
     model = User
     template_name = 'accounts/signup.html'
     form_class = RegisterUserForm
-    success_url = reverse_lazy('main')
+    success_url = reverse_lazy('main_page')
 
     def form_valid(self, form):
         form_valid = super().form_valid(form)
         email = form.cleaned_data['email']
         password = form.cleaned_data['password']
-        form_valid.groups.add(Group.objects.get(name='user'))
+        #form_valid.groups.add(Group.objects.get(name=User))
         aut_user = authenticate(email=email, password=password)     
         login(self.request, aut_user)
         return form_valid
