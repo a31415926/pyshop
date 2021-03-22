@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from accounts.managers import CustomUserManager
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class CustomUser(AbstractUser):
@@ -18,3 +19,12 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+    @classmethod
+    def is_user_email(self, email):
+        try:
+            user = self.objects.get(email=email)
+            return True
+        except ObjectDoesNotExist:
+            return False

@@ -3,8 +3,9 @@ from django.views import generic
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
-
-
+from django.shortcuts import HttpResponse
+import json
+from accounts.models import CustomUser
 from accounts.forms import AuthUserForm, RegisterUserForm
 
 
@@ -33,3 +34,11 @@ class LoginView(LoginView):
 class UserLogoutView(LogoutView):
     next_page = reverse_lazy('main_page')
 
+
+def is_user_exist(request):
+    if request.method == 'POST':
+        data = request.POST
+        print(data)
+        is_user = CustomUser.is_user_email(data['mail'])
+        data_response = {'result': is_user}
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')
