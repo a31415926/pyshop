@@ -2,13 +2,32 @@
 {% load mathfilters %}
 
 {% block content %}
+    {% if product.photo %}<img src="{{product.photo.url}}">{%endif%}
     {{ product.title }} <br>
     {{ product.price|mul:rate_select_currency }} {{disp_select_currency}}<br>
-    <form method="POST" action="{% url 'basket_page' %}">
-        {% csrf_token %}
-        <input type="number" step='1' min=1 name='cnt' start='1' value="1">
-        <input type="hidden" name='type' value="add">
-        <input type="hidden" name='id' value={{product.id}}>
-        <button type='submit'>Добавить в корзину</button>
+        <div class="form_add_basket">
+            <input type="number" step='1' min=1 name='cnt' start='1' value="1" id="cnt_product">
+            <button type='submit' onclick="add2basket('{{product.id}}')" id="btn_add2basket">Добавить в корзину</button>
+        </div>
     </form>
+
+    <script>
+        function add2basket(id){
+            var cnt = $('#cnt_product').val();
+            $.ajax({
+                type: 'POST', url: '{% url "basket_page" %}',
+                data:{'csrfmiddlewaretoken':scrf_token, 'cnt':cnt, 'type':'add', 'id':id,},
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    if (data.success){
+                        var $item = $('<span class="msg">'+ data.success +'</span>');
+                        $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                    }
+                }
+            });
+    }
+    </script>
 {% endblock %}

@@ -1,9 +1,12 @@
-from django.shortcuts import render, HttpResponseRedirect, get_object_or_404, redirect
+from django.shortcuts import render, HttpResponseRedirect, get_object_or_404, redirect, HttpResponse
 from product.models import *
+from django.urls import reverse
 from django.forms.models import model_to_dict
 from product import forms
 from accounts import models
 from product import services
+import json
+import requests
 
 
 def shop_main_page(request):
@@ -34,6 +37,7 @@ def basket(request):
         product_cnt = 1 if not product_cnt else product_cnt
         product_info = model_to_dict(get_object_or_404(Product, id = product_id))
         del(product_info['cid'])
+        del(product_info['photo'])
         
         if not request.session.get('basket'):
             request.session['basket'] = {}
@@ -42,10 +46,22 @@ def basket(request):
                 request.session['basket'][str(product_id)] = product_info
             now_qty = request.session['basket'][str(product_id)].get('qty', 0)
             request.session['basket'][str(product_id)]['qty'] = now_qty + int(product_cnt)
+            data_response = {'success': f'Добавлено в корзину {product_cnt} товаров'}
         elif type_basket == 'del':
             del(request.session['basket'][str(product_id)])
+            html_result = ""
+            for prodoct_id, product_val in request.session['basket'].items():
+                html_result += f'<tr><th scope="row">1</th>'
+                html_result += f'<td><a href=\'{reverse("product_page", kwargs={"pk":product_id})}\'">{product_val["title"]}</a></td>'
+                html_result += f'<td>посчитать</td>'
+                html_result += f'<td>{product_val["qty"]}</td>'
+                html_result += f'<td><button type=\'submit\' onclick="del_basket({product_id})">X</button></td>'
+                html_result += '</tr>'
+                    
+            html_result += ''
+            data_response = {'success':'Удалено', 'responce':html_result}
 
-        return HttpResponseRedirect(link)
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
 
 def checkout_page(request):
@@ -142,7 +158,6 @@ def get_invoice(request, pk):
                 order.user.save()
                 context['pay'] = True
                 context['cancel_order'] = False
-    
 
     context['order'] = order
     context['goods'] = goods
@@ -236,3 +251,36 @@ def edit_price_in_category(request):
         )
 
     return render(request, template, context)
+
+
+def export_products(request):
+    template = 'product/export.html'
+    context = {}
+    if request.method == 'POST':
+        type_file = request.POST.get('type', 'csv')
+        services.ProductServices.export_to_file(type_file)
+    return render(request, template, context)
+
+def import_products(request):
+    template = 'product/import.html'
+    context = {}
+    if request.method == 'POST':
+        data = request.POST
+        type_import = data.get('type')
+        link_price = data.get('link')
+        data_response = {}
+        is_valid_link = services.ImportSheet.is_correct_link(link_price)
+        if type_import == 'import':
+            if is_valid_link:
+                data_response['success'] = '<b>Выполняется обработка прайса..</b>'
+                services.ImportSheet.import_from_gsheets(link_price)
+            else:
+                data_response['error'] = 'Файл по указанной сыслке недоступен.'
+        elif type_import == 'preview':
+            lst_on_preview = services.ImportSheet.import_from_gsheets(link_price, preview=True)
+            data_response['success'] = services.ImportSheet.generate_preview_to_front(lst_on_preview)
+            data_response['preview'] = True
+
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
+    return render(request, template)

@@ -5,6 +5,7 @@ import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,10 +29,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    'rest_framework',
     'mathfilters',
     'accounts',
     'product',
     'support',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -115,18 +119,45 @@ USE_L10N = True
 
 USE_TZ = True
 
+"""AWS_ACCESS_KEY_ID = 'AKIAZEVKKIJXWW7KOYEE'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'project-geek'
+AWS_S3_CUSTOM_DOMAIN = 'project-geek.s3.us-east-2.amazonaws.com'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_DEFAULT_ACL = 'public-read'"""
+#AWS_LOCATION = 'static'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_URL = '/static/'
+#STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#STATIC_URL = '/static/'
 SESSION_SAVE_EVERY_REQUEST = True
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
+"""STATICFILES_DIRS = [os.path.join(BASE_DIR, 'shop/static')]
+#DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
+STATIC_URL = 'https://project-geek.s3.us-east-2.amazonaws.com/'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'"""
 django_heroku.settings(locals())
 
 prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
+
+
+AWS_ACCESS_KEY_ID = 'AKIAZEVKKIJXWW7KOYEE'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'mytestb12'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_LOCATION = 'static'
+AWS_DEFAULT_ACL = 'public-read'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'shop/static'),
+]
+STATIC_URL = 'https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+#DEFAULT_FILE_STORAGE = 'shop.storage_backends.MediaStorage'
