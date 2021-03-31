@@ -281,6 +281,8 @@ def import_products(request):
                 lst_on_preview = services.ImportSheet.import_from_gsheets(link_price, preview=True)
                 data_response['success'] = services.ImportSheet.generate_preview_to_front(lst_on_preview)
                 data_response['preview'] = True
+            else:
+                data_response['error'] = 'Файл по указанной сыслке недоступен.'
 
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
