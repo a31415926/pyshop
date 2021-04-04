@@ -167,9 +167,10 @@ DEFAULT_FILE_STORAGE = 'shop.storage_backends.MediaStorage'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',  # custom authentication class
+        'rest_framework.authentication.SessionAuthentication',  # custom authentication class
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAdminUser',
     )
 }
 

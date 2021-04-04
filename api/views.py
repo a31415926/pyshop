@@ -38,57 +38,15 @@ def connect_tg(request, format=None):
 
 class TokenAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    def get(self, request, format=None):
-        context = {}
-        user = request.user
-        try:
-            token = Token.objects.get(user = user)
-        except Token.DoesNotExist:
-            token = False
-
-        if not token:
-            context['error'] = 'user not found'
-        else:
-            serializer = serializers.TokenSerializer(token)
-            context = {'token':serializer.data,}
-        return Response(context)
     
     def post(self, request, format=None):
         context = {}
         user = request.user
-        try:
-            token, create_token = Token.objects.get_or_create(user = user)
-            if not create_token:
-                token.delete()
-                token = Token.objects.create(user=user)
-            serializer = serializers.TokenSerializer(token)
-            context['success'] = serializer.data
-
-        except Token.DoesNotExist:
-            context['error'] = 'User not found'
-        
-        return Response(context)
-
-
-
-
-"""
-@api_view(['GET', 'UPDATE'])
-#
-def get_user_token(request, format=None):
-    context = {}
-    id = request.GET.get('id')
-    try:
-        token = Token.objects.get(user_id = id)
-    except Token.DoesNotExist:
-        token = False
-
-    if not token:
-        context['error'] = 'user not found'
-    else:
+        token, create_token = Token.objects.get_or_create(user = user)
+        if not create_token:
+            token.delete()
+            token = Token.objects.create(user=user)
         serializer = serializers.TokenSerializer(token)
-            
-        context = {
-            'token':serializer.data,
-        }
-    return Response(context)"""
+        context['success'] = serializer.data
+
+        return Response(context)

@@ -7,6 +7,8 @@ from django.shortcuts import HttpResponse, get_object_or_404, render, HttpRespon
 import json
 from accounts.models import CustomUser
 from accounts.forms import *
+from django.contrib.auth.decorators import login_required
+
 
 
 class SignUpView(generic.CreateView):
@@ -44,6 +46,7 @@ def is_user_exist(request):
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
 
+@login_required(login_url='main_page')
 def subscribe(request):
     template = 'accounts/subscribe.html'
     context = {}
