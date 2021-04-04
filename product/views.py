@@ -18,7 +18,7 @@ def category_page(request, pk):
     return render(request, 'product/category_page.html', context={'products':category})
 
 def product_page(request, pk):
-    product = Product.objects.get_object_or_404(pk=pk)
+    product = get_object_or_404(Product, pk=pk)
     return render(request, 'product/product_page.html', context={'product':product})
 
 def select_curr(request):
