@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
-from accounts.models import CustomUser
+from accounts.models import *
 
 
 class AuthUserForm(AuthenticationForm, forms.ModelForm):
@@ -31,3 +31,9 @@ class RegisterUserForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+class SubscribeForm(forms.ModelForm):
+    class Meta:
+        model = Subscribe
+        exclude = ['user']
+        

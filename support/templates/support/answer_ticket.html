@@ -9,7 +9,8 @@
 <form action="" method="POST">
     {% csrf_token %}
     Введи ответ:
-    <textarea name="answer" id="" cols="30" rows="10"></textarea>
+    {{form}}
+    {%if ticket_status%}{{ticket_status}}{%endif%}
     <button>Ответить</button>
 </form>
 {% endblock %}

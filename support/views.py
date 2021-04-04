@@ -1,6 +1,8 @@
 from django.shortcuts import render, get_object_or_404, HttpResponseRedirect, reverse
 from support.models import *
 from django.contrib.auth.decorators import login_required
+from support import forms
+from accounts import subscribe
 
 
 @login_required(login_url='main_page')
@@ -38,20 +40,21 @@ def answer_ticket_support(request, pk):
     template = 'support/answer_ticket.html'
     ticket = get_object_or_404(Ticket, pk = pk)
     context = {}
+    context['form'] = forms.SupportAnswer()
+    context['ticket_status'] = forms.TicketStatus(instance=ticket)
     context['messages'] = ticket.ticketmessage_set.all()
     if request.method == 'POST':
-        data = request.POST
-        msg_answer = data.get('answer')
-        if msg_answer:
-            ticket.status = 'answer'
-            ticket.save()
-            TicketMessage.objects.create(
-                ticket = ticket,
-                message = msg_answer,
-                support_user = request.user,
-            )
-            print(msg_answer)
-            return HttpResponseRedirect(request.path)
+        form_answer = forms.SupportAnswer(request.POST)
+        form_status = forms.TicketStatus(request.POST, instance=ticket)
+        if form_answer.is_valid() and form_status.is_valid():
+            message = form_answer.cleaned_data['message']
+            form_answer = form_answer.save(commit=False)
+            form_answer.ticket = ticket
+            form_answer.support_user = request.user
+            form_answer.save()
+            form_status.save()
+            subscribe.subscribe_answer_support(ticket.user.pk, message)
+        return HttpResponseRedirect(request.path)
     return render(request, template, context)
 
 

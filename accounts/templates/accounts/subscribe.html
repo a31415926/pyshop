@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<button type="submit" onclick="get_token()">CREATE TOKEN</button>
+<div id="user_token"></div>
+<br><br>
+<form action="" id='sub_form' method="POST">
+    {%csrf_token%}
+    {{form}}
+    <button type="submit" id='form_sub'>OK</button>
+    
+</form>
+<script>
+    function set_subscribe(){
+        var data_form = $('#sub_form').serialize();
+        $.ajax({
+        type: 'POST', url: '{% url "get_token" %}',
+        dataType:'html',
+      data:{'csrfmiddlewaretoken':scrf_token, data_form},
+      dataType: 'json', cache: false,
+      success: function(data){
+        if (data.success){$('#user_token').text(data.success.key);}
+        else{console.log(data)}
+      }
+    });
+    }
+
+  function get_token(){
+    $.ajax({
+      type: 'POST', url: '{% url "get_token" %}',
+      data:{'csrfmiddlewaretoken':scrf_token,},
+      dataType: 'json', cache: false,
+      success: function(data){
+        if (data.success){$('#user_token').text(data.success.key);}
+        else{console.log(data)}
+      }
+    });
+  }
+</script>
+{% endblock %}

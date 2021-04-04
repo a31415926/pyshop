@@ -4,6 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from accounts.managers import CustomUserManager
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.authtoken.models import Token
 
 
 class CustomUser(AbstractUser):
@@ -11,6 +12,9 @@ class CustomUser(AbstractUser):
                                 validators=[UnicodeUsernameValidator()])
     email = models.EmailField(_('email address'), unique=True)
     balance = models.FloatField(default=0)
+    id_tg = models.IntegerField(blank = True, null=True)
+
+
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -28,3 +32,12 @@ class CustomUser(AbstractUser):
             return True
         except ObjectDoesNotExist:
             return False
+
+
+class Subscribe(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    is_promo = models.BooleanField(default=False, verbose_name='Акции')
+    is_answer_support = models.BooleanField(default=False, verbose_name='Уведомления об ответе службы поддержки')
+    is_create_order = models.BooleanField(default=False, verbose_name='Офорлмение заказа')
+
+

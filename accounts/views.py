@@ -3,10 +3,10 @@ from django.views import generic
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
-from django.shortcuts import HttpResponse
+from django.shortcuts import HttpResponse, get_object_or_404, render, HttpResponseRedirect
 import json
 from accounts.models import CustomUser
-from accounts.forms import AuthUserForm, RegisterUserForm
+from accounts.forms import *
 
 
 class SignUpView(generic.CreateView):
@@ -42,3 +42,19 @@ def is_user_exist(request):
         is_user = CustomUser.is_user_email(data['mail'])
         data_response = {'result': is_user}
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
+
+def subscribe(request):
+    template = 'accounts/subscribe.html'
+    context = {}
+    subs, _ = Subscribe.objects.get_or_create(user = request.user)
+    form = SubscribeForm(instance=subs)
+    context['form'] = form
+    if request.method == 'POST':
+        form = SubscribeForm(request.POST, instance=subs)
+        if form.is_valid():
+            form = form.save(commit=False)
+            form.user = request.user
+            form.save()
+            return HttpResponseRedirect(request.path_info)
+    return render(request, template, context)
