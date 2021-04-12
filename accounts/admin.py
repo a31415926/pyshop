@@ -4,4 +4,3 @@ from rest_framework.authtoken.models import Token
 
 admin.site.register(CustomUser)
 admin.site.register(Subscribe)
-admin.site.register(Token)

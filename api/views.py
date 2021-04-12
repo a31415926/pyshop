@@ -14,6 +14,7 @@ from rest_framework import status
 from api import serializers
 from rest_framework import permissions
 from accounts.models import CustomUser
+from django.contrib.sessions.models import Session
 
 
 @api_view(['POST'])
@@ -33,6 +34,28 @@ def connect_tg(request, format=None):
         user.save()
         content = {'success': {'msg': 'Аккаунт подключен'},}
     return Response(content)
+
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated, ])
+def close_session(request, format=None):
+    session_key = request.POST.get('session_key')
+    content = {}
+    try: 
+        user_session = Session.objects.get(session_key = session_key)
+        user_session_info = user_session.get_decoded()
+        if str(request.user.id) == user_session_info.get('_auth_user_id'):
+            user_session.delete()
+            content['success'] = 'session close'
+        else:
+            content['error'] = 'user unautentificated'
+    except Session.DoesNotExist:
+        content['error'] = 'session key not found'
+    
+    return Response(content)
+     
+
+
 
 
 

@@ -4,6 +4,7 @@
 {% block content %}
     {% if product.photo %}<img src="{{product.photo.url}}">{%endif%}
     {{ product.title }} <br>
+    {% if product.file_digit %}{{product.file_digit.url}}{%endif%}
     {{ product.price|mul:rate_select_currency }} {{disp_select_currency}}<br>
         <div class="form_add_basket">
             <input type="number" step='1' min=1 name='cnt' start='1' value="1" id="cnt_product">

@@ -39,5 +39,7 @@ class Subscribe(models.Model):
     is_promo = models.BooleanField(default=False, verbose_name='Акции')
     is_answer_support = models.BooleanField(default=False, verbose_name='Уведомления об ответе службы поддержки')
     is_create_order = models.BooleanField(default=False, verbose_name='Офорлмение заказа')
+    is_get_digit_file = models.BooleanField(default=False, verbose_name='Получать цифровые файлы с заказа')
+    is_authorization = models.BooleanField(default=False, verbose_name='Успешной авторизации в аккаунт')
 
 

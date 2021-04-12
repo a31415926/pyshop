@@ -10,8 +10,17 @@ import requests
 
 
 def shop_main_page(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    print(request.META)
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[-1].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+
+    print(ip)
+    print(request.session.session_key)
     categories = Categories.objects.all()
-    return render(request, 'product/main_page.html', context={'category':categories})
+    return render(request, 'product/main_page.html', context={'category':categories, 'ip' : ip})
 
 def category_page(request, pk):
     category = Product.objects.filter(cid=pk)
@@ -38,6 +47,7 @@ def basket(request):
         product_info = model_to_dict(get_object_or_404(Product, id = product_id))
         del(product_info['cid'])
         del(product_info['photo'])
+        del(product_info['file_digit'])
         
         if not request.session.get('basket'):
             request.session['basket'] = {}
@@ -113,7 +123,7 @@ def all_invoices(request):
     """ страница со всеми заказами """
     template = 'product/all_invoices.html'
     context = {}
-    all_invoices = Order.objects.all()
+    all_invoices = Order.objects.filter().order_by('-pk')
     all_status = forms.ChangeStatusOrder()
     context['all_invoices'] = all_invoices
     context['all_status'] = all_status
@@ -125,7 +135,6 @@ def change_invoice(request):
     if request.method == 'POST':
         link = request.META.get('HTTP_REFERER')
         Order.change_status(request.POST.get('id_order'), request.POST.get('status'))
-
         return HttpResponseRedirect(link)    
 
 
@@ -134,6 +143,14 @@ def get_invoice(request, pk):
     context = {}
     order = get_object_or_404(Order, pk=pk)
     goods = order.orderitem_set.all()
+    digital_links = {}
+    if order.status == 'paid':
+        for good in goods:
+            product_in_inv = get_object_or_404(Product, pk = good.id_good)
+            type_good = product_in_inv.type_product
+            if type_good == 'file':
+                link_product_file = product_in_inv.file_digit.url
+                digital_links[good.title_good] = link_product_file
     if request.user.is_authenticated and order.user:
         if request.user.id == order.user.id:
             user_balance = order.user.balance
@@ -161,6 +178,8 @@ def get_invoice(request, pk):
 
     context['order'] = order
     context['goods'] = goods
+    context['digital'] = digital_links
+    print(context)
     return render(request, template, context=context)
 
 
@@ -244,7 +263,6 @@ def edit_price_in_category(request):
         data_for_edit = services.ProductServices.data_preparation_edit_price(data)
         products = services.ProductServices.get_all_products_in_categories(data_for_edit['lst_cats_id'])
         services.ProductServices.edit_price_products(
-            products = products, 
             type_edit = data_for_edit['type_edit'], 
             value_edit = data_for_edit['value_edit'], 
             is_edit_old_price = data_for_edit['is_edit_old_price']

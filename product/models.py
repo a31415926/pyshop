@@ -2,10 +2,14 @@ from django.db import models
 from accounts.models import CustomUser
 from django.db.models.signals import post_delete
 from datetime import date
+import os
 
 
 class Product(models.Model):
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
+    type_product = models.CharField(choices=[('material', 'Материальный'),('file', 'Файл'),],
+        default='material', max_length=100, verbose_name='Тип товара')
+    file_digit = models.FileField(default=None, blank=True, null=True, verbose_name='Файл (при тип товара - Файл)')
     title = models.CharField(max_length=300, default='Noname')
     stock = models.IntegerField(blank=True, default=0, null=True)
     brand = models.CharField(blank=True, null=True, max_length=150)
@@ -16,7 +20,7 @@ class Product(models.Model):
     cid = models.ManyToManyField('Categories', related_name = 'category')
     date_add = models.DateTimeField(auto_now_add=True)
     date_edit = models.DateTimeField(auto_now=True)
-    photo = models.FileField(default=None, null=True)
+    photo = models.FileField(default=None, null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -141,6 +145,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     #содержимое заказов
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     id_good = models.IntegerField(default=1)
     title_good = models.CharField(default='Noname', max_length=300)
     cost = models.FloatField(default=1)
@@ -149,3 +154,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE)
 
 
+class FileTelegram(models.Model):
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    id_file = models.CharField(max_length=100)

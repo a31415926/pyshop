@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form action="" id='sub_form' method="POST">
+    {%csrf_token%}
+    <textarea name="text_promotions" id="" cols="30" rows="10"></textarea>
+    <button type="submit" id='form_sub'>OK</button>
+</form>
+{% endblock %}

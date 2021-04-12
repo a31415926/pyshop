@@ -2,8 +2,7 @@
 {% load mathfilters %}
 
 {% block content %}
-    hello
-    {{order.status}}
+    Status order - {{order.status}}
     <table class="table">
         <thead>
           <tr>
@@ -36,6 +35,10 @@
             <input type="hidden" name="mode" value = 'cancel_order'>
             <button type="submit" >Отменить</button>
           {%endif%}
-
         </form>
+        {%if digital %}
+          {%for name, link in digital.items %}
+            <a href="{{link}}">Скачать {{name}}</a><br>
+          {%endfor%}
+        {% endif %}
 {% endblock %}

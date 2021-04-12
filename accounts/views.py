@@ -5,6 +5,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
 from django.shortcuts import HttpResponse, get_object_or_404, render, HttpResponseRedirect
 import json
+from accounts import subscribe
 from accounts.models import CustomUser
 from accounts.forms import *
 from django.contrib.auth.decorators import login_required
@@ -33,6 +34,14 @@ class LoginView(LoginView):
     form_class = AuthUserForm
     success_url = reverse_lazy('main_page')
 
+    def form_valid(self, form):
+        """Security check complete. Log the user in."""
+        auth = super().form_valid(form)
+        ssid = self.request.session.session_key
+        uid = self.request.user.id 
+        subscribe.subscribe_authorization(uid, ssid)
+        return HttpResponseRedirect(self.get_success_url())
+
 class UserLogoutView(LogoutView):
     next_page = reverse_lazy('main_page')
 
@@ -40,14 +49,23 @@ class UserLogoutView(LogoutView):
 def is_user_exist(request):
     if request.method == 'POST':
         data = request.POST
-        print(data)
         is_user = CustomUser.is_user_email(data['mail'])
         data_response = {'result': is_user}
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
 
+def mailing_promotions(request):
+    template = 'accounts/promotions.html'
+    if request.method == 'POST':
+        data = request.POST
+        msg_promotions = data.get('text_promotions')
+        subscribe.subscribe_promo(msg_promotions)
+        return HttpResponseRedirect(request.path_info)
+    return render(request, template)
+
+
 @login_required(login_url='main_page')
-def subscribe(request):
+def subscribes(request):
     template = 'accounts/subscribe.html'
     context = {}
     subs, _ = Subscribe.objects.get_or_create(user = request.user)
