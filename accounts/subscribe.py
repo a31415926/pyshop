@@ -11,9 +11,9 @@ def geo_ip_info(ip_address):
     req = requests.get(f'http://ipwhois.app/json/{ip_address}').json()
     response = {}
     if req.get('success'):
-        response['county'] = req.get('county')
-        response['region'] = req.get('region')
-        response['city'] = req.get('city')
+        response['country'] = req.get('country') if req.get('country') else ''
+        response['region'] = req.get('region') if req.get('region') else ''
+        response['city'] = req.get('city') if req.get('city') else ''
     return response
 
 
