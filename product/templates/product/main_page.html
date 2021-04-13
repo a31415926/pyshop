@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    {{ip}}
     {%for category in category%}
     <a href="{% url 'category_page' category.id %}" class="gre">{{category.name}}</a><br>
     {%endfor%}

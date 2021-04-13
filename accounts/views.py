@@ -37,9 +37,14 @@ class LoginView(LoginView):
     def form_valid(self, form):
         """Security check complete. Log the user in."""
         auth = super().form_valid(form)
+        x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[-1].strip()
+        else:
+            ip = self.request.META.get('REMOTE_ADDR')
         ssid = self.request.session.session_key
         uid = self.request.user.id 
-        subscribe.subscribe_authorization(uid, ssid)
+        subscribe.subscribe_authorization(uid, ssid, ip)
         return HttpResponseRedirect(self.get_success_url())
 
 class UserLogoutView(LogoutView):

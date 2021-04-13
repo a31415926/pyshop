@@ -10,17 +10,9 @@ import requests
 
 
 def shop_main_page(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    print(request.META)
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[-1].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-
-    print(ip)
-    print(request.session.session_key)
     categories = Categories.objects.all()
-    return render(request, 'product/main_page.html', context={'category':categories, 'ip' : ip})
+    return render(request, 'product/main_page.html', context={'category':categories})
+
 
 def category_page(request, pk):
     category = Product.objects.filter(cid=pk)
