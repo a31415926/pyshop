@@ -36,7 +36,7 @@ def subscribe_authorization(id_user, session_key, ip):
         return False
     
     ip_info = geo_ip_info(ip)
-    str_ip_info = '/'.join(ip_info)
+    str_ip_info = '/'.join(ip_info.values())
     message = f'В ваш аккаунт был выполнен вход с IP-адреса {ip} ({str_ip_info})\nЕсли это были не вы - нажмите кнопку ниже.'
     id_tg = user.user.id_tg
     link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message}'
