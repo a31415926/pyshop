@@ -1,8 +1,25 @@
 from django.db import models
 from accounts.models import CustomUser
 from django.db.models.signals import post_delete
+from django.urls import reverse
 from datetime import date
 import os
+
+
+class PriceMatrix(models.Model):
+    name = models.CharField(max_length=200, default='Name matrix', verbose_name='Название')
+
+
+class PriceMatrixItem(models.Model):
+    type_item_choices = [
+        ('relative', 'В процентах'),
+        ('fixed', 'Фиксированная'),    
+    ]
+    min_value = models.FloatField(default=0, verbose_name='От') 
+    max_value = models.FloatField(default=0, verbose_name='До')
+    type_item = models.CharField(max_length=50, choices=type_item_choices, default='fixed', verbose_name='Тип')
+    value = models.FloatField(default=0, verbose_name='Значение')
+    matrix = models.ForeignKey(PriceMatrix, on_delete=models.CASCADE)
 
 
 class Product(models.Model):
@@ -58,9 +75,32 @@ class Currency(models.Model):
 class Delivery(models.Model):
     name = models.CharField(max_length=350, default='Delivery')
     description = models.TextField(blank=True, null=True)
+    matrix = models.ForeignKey(PriceMatrix, blank=True, null=True, default=None, on_delete=models.PROTECT)
 
     def __str__(self):
         return self.name
+
+
+    @classmethod
+    def calc_cost_of_delivery(cls, id_delivery, total_amount):
+        delivery = cls.objects.get(pk=id_delivery)
+        delivery_matrix = delivery.matrix
+        if not delivery_matrix:
+            return 0
+        items = delivery_matrix.pricematrixitem_set.all()
+        cost_of_delivery = 0
+        for item in items:
+            if item.min_value <= total_amount < item.max_value:
+                if item.type_item =='fixed':
+                    cost_of_delivery = item.value
+                    break
+                elif item.type_item == 'relative':
+                    cost_of_delivery = total_amount /100 * item.value
+                    break
+
+        cost_of_delivery = round(cost_of_delivery, 2)
+        print(cost_of_delivery)
+        return cost_of_delivery
 
 class Promocode(models.Model):
     #table with promocode
@@ -123,19 +163,37 @@ class Order(models.Model):
         ('cancel', 'Отменен'),
     ]
     user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, null=True, blank=True)
-    full_amount = models.FloatField(default=0)
-    total_amount = models.FloatField(default=0)
-    full_amount_on_curr = models.FloatField(default=0)
-    total_amount_on_curr = models.FloatField(default=0)
+    full_amount = models.FloatField(default=0, verbose_name='Полная стоимость товаров в у.е.')
+    total_amount = models.FloatField(default=0, verbose_name='Сумма к оплате в у.е.')
+    full_amount_on_curr = models.FloatField(default=0, verbose_name='Полная стоимость товаров с учетом курса')
+    total_amount_on_curr = models.FloatField(default=0, verbose_name='Сумма к оплате с учетом курса')
     date_create = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(default='new', choices=status_choices, max_length=50)
-    currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
-    rate_currency = models.FloatField(default=1)
-    promo = models.ForeignKey(Promocode, on_delete=models.PROTECT, blank=True, null=True, default='')
+    status = models.CharField(default='new', choices=status_choices, max_length=50, verbose_name='Статус заказа')
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name='Валюта')
+    rate_currency = models.FloatField(default=1, verbose_name='Курс валюты в момент заказа')
+    promo = models.ForeignKey(Promocode, on_delete=models.PROTECT, blank=True, null=True, default='', verbose_name='Промокод')
+    delivery_method = models.ForeignKey(Delivery, null=True, blank=True, on_delete=models.PROTECT, verbose_name='Способ доставки')
+    cost_of_delivery = models.FloatField(default=0, verbose_name='Стоимость доставки')
+    cost_of_delivery_on_curr = models.FloatField(default=0, verbose_name='Стоимость доставки в валюте')
 
 
     class Meta:
         permissions = (('change_status','Can change status order'),)
+
+
+    def get_absolute_url(self):
+        return reverse('invoice_page', args=[self.id])
+
+
+    def save(self, *args, **kwargs):
+        self.full_amount = round(self.full_amount, 2)
+        self.total_amount = round(self.total_amount, 2)
+        self.cost_of_delivery = round(self.cost_of_delivery, 2)
+        self.rate_currency = round(self.rate_currency, 2)
+        self.total_amount_on_curr = round(self.total_amount_on_curr, 2)
+        self.full_amount_on_curr = round(self.full_amount_on_curr, 2)
+        super(Order, self).save(*args, **kwargs)
+
 
     @classmethod
     def change_status(cls, id_order, new_status):
@@ -158,3 +216,4 @@ class FileTelegram(models.Model):
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     id_file = models.CharField(max_length=100)
+

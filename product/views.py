@@ -7,6 +7,9 @@ from accounts import models
 from product import services
 import json
 import requests
+from accounts import subscribe
+from django.core import serializers
+from api.serializers import *
 
 
 def shop_main_page(request):
@@ -76,6 +79,8 @@ def checkout_page(request):
     delivery = Delivery.objects.all()
     if request.method == 'POST':
         data = request.POST.copy()
+        id_delivery = data.get('delivery', 1)
+        order_delivery = Delivery.objects.get(pk=id_delivery)
         order_currency = Currency.objects.get(code = request.session.get('curr_id', 'UAH'))
         promocode = data.get('promo_code')
         is_promo = False
@@ -84,20 +89,28 @@ def checkout_page(request):
             if is_promo:
                 data['promo'] = Promocode.objects.get(code = data['promo_code'])
         discount = Promocode.get_discount(total_cost, data['promo_code']) if is_promo else 0
+        total_cost_with_discount = total_cost + discount
+        cost_delivery = Delivery.calc_cost_of_delivery(id_delivery, total_cost_with_discount)
         data['user'] = request.user if request.user.is_authenticated else ''
         data['full_amount'] = total_cost
-        data['total_amount'] = total_cost + discount
+        data['total_amount'] = total_cost_with_discount + cost_delivery
         data['full_amount_on_curr'] = total_cost*order_currency.rate
         data['total_amount_on_curr'] = data['total_amount'] * order_currency.rate
         data['currency'] = order_currency
         data['rate_currency'] = order_currency.rate
+        data['delivery_method'] = order_delivery
+        data['cost_of_delivery'] = cost_delivery
+        data['cost_of_delivery_on_curr'] = cost_delivery * order_currency.rate
         create_order = forms.OrderForm(data)
         print(create_order.errors)
 
         if create_order.is_valid() and basket:
             new_order = create_order.save()
+            if request.user:
+                subscribe.subscribe_create_order(request.user.id, new_order.id, new_order.get_absolute_url())
             for good in basket.values():
                 OrderItem.objects.create(
+                    product=Product.objects.get(pk=good['id']),
                     id_good = good['id'], 
                     title_good = good['title'],
                     cost = good['price'],
@@ -171,7 +184,6 @@ def get_invoice(request, pk):
     context['order'] = order
     context['goods'] = goods
     context['digital'] = digital_links
-    print(context)
     return render(request, template, context=context)
 
 
@@ -297,3 +309,21 @@ def import_products(request):
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
     return render(request, template)
+
+
+def matrix(request):
+    template = 'product/matrix_page.html'
+    context = {}
+    all_matrix = PriceMatrix.objects.all()
+    context['all_matrix'] = {}
+    for matrix in all_matrix:
+        matrix_imets = matrix.pricematrixitem_set.all()
+        context['all_matrix'][matrix.name] = {}
+        for item in matrix_imets:
+            context['all_matrix'][matrix.name][f'min_{item.pk}'] = item.min_value 
+            context['all_matrix'][matrix.name][f'max_{item.pk}'] = item.max_value 
+            context['all_matrix'][matrix.name][f'type_{item.pk}'] = item.type_item 
+            context['all_matrix'][matrix.name][f'value{item.pk}'] = item.value 
+            context['all_matrix'][matrix.name]['id'] = item.pk 
+    print(requests.get('http://127.0.0.1:8000/api/get_matrix/').json())
+    return render(request, template, context)

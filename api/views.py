@@ -6,6 +6,8 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
     HTTP_200_OK,
 )
+from rest_framework.authentication import SessionAuthentication
+
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
@@ -14,6 +16,7 @@ from rest_framework import status
 from api import serializers
 from rest_framework import permissions
 from accounts.models import CustomUser
+from product.models import *
 from django.contrib.sessions.models import Session
 
 
@@ -55,10 +58,6 @@ def close_session(request, format=None):
     return Response(content)
      
 
-
-
-
-
 class TokenAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
@@ -71,5 +70,16 @@ class TokenAPI(APIView):
             token = Token.objects.create(user=user)
         serializer = serializers.TokenSerializer(token)
         context['success'] = serializer.data
+        return Response(context)
 
+
+class MatrixAPI(APIView):
+    authentication_classes = [SessionAuthentication]
+
+    def get(self, request, format=None):
+        context = {}
+        all_matrix = PriceMatrix.objects.all()
+        serializer = serializers.MatrixSerializer(all_matrix, many=True)
+        context['success'] = serializer.data
+        print(serializer.data)
         return Response(context)

@@ -6,4 +6,5 @@ urlpatterns = [
     path('connect_tg/', views.connect_tg),
     path('close_session/', views.close_session),
     path('test_token/', views.TokenAPI.as_view(), name='get_token'),
+    path('get_matrix/', views.MatrixAPI.as_view(), name = 'get_matrix'),
 ]

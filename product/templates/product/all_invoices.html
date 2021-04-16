@@ -8,9 +8,9 @@
         <th scope="col">ID</th>
         <th scope="col">user</th>
         <th scope="col">PROMO</th>
-        <th scope="col">Общая стоимость</th>
         <th scope="col">валюта</th>
         <th scope="col">стоимость с учетом курса</th>
+        <th scope="col">стоимость доставки в валюте</th>
         <th scope="col">сумма к оплате</th>
         <th scope="col">status</th>
       </tr>
@@ -22,9 +22,9 @@
         <td><a href="{% url 'invoice_page' invoice.id %}" target="_blank">{{invoice.id}}</a></td>
         <td>{{invoice.user}}</td>
         <td>{{invoice.promo}}</td>
-        <td>{{invoice.total_amount}}</td>
         <td>{{invoice.currency}}</td>
         <td>{{invoice.full_amount_on_curr}}</td>
+        <td>{{ invoice.cost_of_delivery_on_curr}}</td>
         <td>{{ invoice.total_amount_on_curr}}</td>
         <td>
             <form action="{% url 'change_invoice' %}" method="POST" id='change_status_{{invoice.id}}'>

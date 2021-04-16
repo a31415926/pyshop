@@ -1,3 +1,4 @@
+from shop.settings import SITE_URL
 from accounts.models import *
 from product.models import *
 import requests
@@ -27,6 +28,21 @@ def subscribe_answer_support(id_user, text_answer):
     id_tg = user.user.id_tg
     link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message[:200]}'
     req = requests.get(link)
+
+
+def subscribe_create_order(id_user, id_order, url_order):
+    print('tut')
+    try:
+        user = Subscribe.objects.get(user_id = id_user, is_create_order = True)
+    except Subscribe.DoesNotExist:
+        return False
+    
+    message = f'Вы оформили заказ с ID {id_order}\nСсылка на заказ: {SITE_URL}{url_order}'
+    id_tg = user.user.id_tg
+    link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message}'
+    req = requests.get(link)
+    print(link)
+    print(req.text)
 
 
 def subscribe_authorization(id_user, session_key, ip):

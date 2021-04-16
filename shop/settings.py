@@ -3,20 +3,17 @@ from pathlib import Path
 import os
 import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '!%c$$78v36_ah)-1j8(hxg6u@*fk2*jnut5m$*z&fr^=jsdq%u'
 TG_TOKEN = '1729761851:AAHRK8aaNbAMuOj0qis-xOeB9p_rHZu1TPg'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+SITE_URL = '127.0.0.1:8000'
 ALLOWED_HOSTS = ['project-geek.herokuapp.com', '127.0.0.1']
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
