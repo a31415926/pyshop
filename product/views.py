@@ -8,8 +8,7 @@ from product import services
 import json
 import requests
 from accounts import subscribe
-from django.core import serializers
-from api.serializers import *
+import datetime
 
 
 def shop_main_page(request):
@@ -128,10 +127,19 @@ def all_invoices(request):
     """ страница со всеми заказами """
     template = 'product/all_invoices.html'
     context = {}
-    all_invoices = Order.objects.filter().order_by('-pk')
+    filter_order = {}
+    date_default = {}
+    if request.method == 'POST':
+        data = request.POST
+        if data.get('filter'):
+            filter_order = services.OrderServise.filter_order(data)
+
+    all_invoices = Order.objects.filter(**filter_order).order_by('-pk')
     all_status = forms.ChangeStatusOrder()
     context['all_invoices'] = all_invoices
     context['all_status'] = all_status
+    context['filter'] = filter_order
+    context['filter'].update(date_default)
     return render(request, template, context=context)
 
 
