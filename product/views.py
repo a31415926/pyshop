@@ -21,6 +21,7 @@ def category_page(request, pk):
     return render(request, 'product/category_page.html', context={'products':category})
 
 def product_page(request, pk):
+    print(request.user.id)
     product = get_object_or_404(Product, pk=pk)
     return render(request, 'product/product_page.html', context={'product':product})
 
@@ -32,29 +33,23 @@ def select_curr(request):
 
 def basket(request):
     if request.method == 'POST':
-        link = request.META.get('HTTP_REFERER')
+        
+        basket = services.Basket.get_basket(request.user.id) if request.user.is_authenticated else request.session.get('basket', {})
         type_basket = request.POST.get('type')
         product_id = request.POST.get('id')
+        
         #защита от дурака, чтобы не отправили null, дефолтное будет 1
         product_cnt = request.POST.get('cnt', 1)
-        product_cnt = 1 if not product_cnt else product_cnt
-        product_info = model_to_dict(get_object_or_404(Product, id = product_id))
-        del(product_info['cid'])
-        del(product_info['photo'])
-        del(product_info['file_digit'])
-        
+        product_cnt = 1 if not product_cnt else product_cnt   
         if not request.session.get('basket'):
             request.session['basket'] = {}
         if type_basket == 'add':
-            if not request.session['basket'].get(str(product_id)):
-                request.session['basket'][str(product_id)] = product_info
-            now_qty = request.session['basket'][str(product_id)].get('qty', 0)
-            request.session['basket'][str(product_id)]['qty'] = now_qty + int(product_cnt)
+            basket = services.Basket.add2basket(basket, product_id, product_cnt, user_id=request.user.id)
             data_response = {'success': f'Добавлено в корзину {product_cnt} товаров'}
         elif type_basket == 'del':
-            del(request.session['basket'][str(product_id)])
+            basket = services.Basket.del2basket(basket, product_id, request.user.id)
             html_result = ""
-            for prodoct_id, product_val in request.session['basket'].items():
+            for prodoct_id, product_val in basket.items():
                 html_result += f'<tr><th scope="row">1</th>'
                 html_result += f'<td><a href=\'{reverse("product_page", kwargs={"pk":product_id})}\'">{product_val["title"]}</a></td>'
                 html_result += f'<td>посчитать</td>'
@@ -64,14 +59,12 @@ def basket(request):
                     
             html_result += ''
             data_response = {'success':'Удалено', 'responce':html_result}
-
+        request.session['basket'] = basket
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
 
 def checkout_page(request):
-    if not request.session.get('basket'):
-        request.session['basket'] = {}
-    basket = request.session['basket']
+    basket = services.Basket.get_basket(request.user.id) if request.user.is_authenticated else request.session.get('basket', {})
     total_cost = 0
     for i in basket.values():
         total_cost += i['qty'] * i['price']
@@ -110,12 +103,10 @@ def checkout_page(request):
             for good in basket.values():
                 OrderItem.objects.create(
                     product=Product.objects.get(pk=good['id']),
-                    id_good = good['id'], 
-                    title_good = good['title'],
+                    id_good = good['id'], title_good = good['title'],
                     cost = good['price'],
                     cost_on_curr = good['price'] * order_currency.rate,
-                    order = new_order,
-                    qty = good['qty'],
+                    order = new_order, qty = good['qty'],
                 )
 
             return redirect('invoice_page', new_order.id)  
@@ -333,5 +324,4 @@ def matrix(request):
             context['all_matrix'][matrix.name][f'type_{item.pk}'] = item.type_item 
             context['all_matrix'][matrix.name][f'value{item.pk}'] = item.value 
             context['all_matrix'][matrix.name]['id'] = item.pk 
-    print(requests.get('http://127.0.0.1:8000/api/get_matrix/').json())
     return render(request, template, context)

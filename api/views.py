@@ -18,6 +18,7 @@ from rest_framework import permissions
 from accounts.models import CustomUser
 from product.models import *
 from django.contrib.sessions.models import Session
+from product import services
 
 
 @api_view(['POST'])
@@ -81,5 +82,25 @@ class MatrixAPI(APIView):
         all_matrix = PriceMatrix.objects.all()
         serializer = serializers.MatrixSerializer(all_matrix, many=True)
         context['success'] = serializer.data
-        print(serializer.data)
+        return Response(context)
+
+    
+class Basket(APIView):
+
+    def get(self, request, format=None):
+        context = {}
+        basket = BasketItem.objects.filter(user=request.user)
+        serializer = serializers.BasketSerializer(basket, many=True)
+        context['success'] = serializer.data
+        return Response(context)
+
+
+class ProductAPI(APIView):
+
+    def get(self, request, format=None):
+        filter_attr = request.GET
+        filter_product = services.ProductServices.filter_product(filter_attr)
+        product = Product.objects.filter(**filter_product)
+        serializer = serializers.ProductSerializer(product, many=True)
+        context = {'success':serializer.data}
         return Response(context)

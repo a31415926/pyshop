@@ -217,3 +217,13 @@ class FileTelegram(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     id_file = models.CharField(max_length=100)
 
+
+class BasketItem(models.Model):
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Пользователь')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Товар', null=True)
+    qty = models.IntegerField(default=1, verbose_name='Количество')
+    price = models.FloatField(verbose_name='Стоимость за ед.')
+    title = models.CharField(max_length=200, verbose_name='Название товара')
+
+

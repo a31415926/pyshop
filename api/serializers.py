@@ -21,3 +21,16 @@ class MatrixSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceMatrix
         fields = ['id', 'name', 'items']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'title', 'brand', 'desc', 'vendor_code', 'price']
+
+
+class BasketSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = BasketItem
+        fields = ['qty',]

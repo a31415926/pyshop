@@ -2,6 +2,7 @@ from django.contrib import admin
 from product.models import *
 
 
+admin.site.register(BasketItem)
 admin.site.register(Categories)
 admin.site.register(Product)
 admin.site.register(Currency)

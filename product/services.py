@@ -1,5 +1,7 @@
-from product import models
+from product.models import *
+from accounts.models import *
 import re
+import json
 from importlib import import_module
 from django.conf import settings
 import csv, xlsxwriter
@@ -9,7 +11,56 @@ import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 from googleapiclient.errors import HttpError
 import datetime
+from django.forms.models import model_to_dict
+from django.shortcuts import get_object_or_404
 
+
+
+class Basket:
+
+    def get_basket(user_id = None):
+        basket = {}
+        if user_id:
+            user = get_object_or_404(CustomUser, id = user_id)
+            basket_obj = BasketItem.objects.filter(user_id = user)
+            for i in basket_obj:
+                basket[str(i.product.id)] = {
+                    'id': i.product.id,
+                    'title': i.product.title,
+                    'type_product':i.product.type_product,
+                    'qty': i.qty,
+                    'price': i.price,
+                }
+        return basket
+    
+    def add2basket(basket, product_id, qty, user_id = None):
+        product = get_object_or_404(Product, id = product_id)
+        product_info = model_to_dict(product)
+        del(product_info['cid'])
+        del(product_info['photo'])
+        del(product_info['file_digit'])
+        if not basket.get(str(product_id)):
+            basket[str(product_id)] = product_info
+        now_qty = basket[str(product_id)].get('qty', 0)
+        basket[str(product_id)]['qty'] = now_qty + int(qty)
+        if user_id:
+            bsk, create_basket = BasketItem.objects.get_or_create(
+                user = CustomUser.objects.get(id = user_id),
+                product = product,
+                defaults = {'qty' : now_qty + int(qty),
+                    'title' : product.title, 'price' : product.price,})
+            if not create_basket:
+                bsk.qty = now_qty + int(qty)
+                bsk.save()
+        return basket
+
+
+    def del2basket(basket, product_id, user_id = None):
+        del(basket[str(product_id)])
+        if user_id:
+            product = Product.objects.get(id = product_id)
+            BasketItem.objects.filter(user = CustomUser.objects.get(id = user_id), product=product).delete()
+        return basket
 
 class OrderServise:
     def filter_order(data):
@@ -36,6 +87,19 @@ class OrderServise:
 
 class ProductServices:
 
+    def filter_product(data):
+        filter_product = {}
+        if data.get('pid'):
+            try:
+                filter_product['id'] = int(data.get('pid'))
+            except ValueError:
+                context['error'] = 'INCORRECT PARAMETRE'
+        if data.get('min_price'):
+            filter_product['price__gte'] = data.get('min_price') 
+        if data.get('max_price'):
+            filter_product['price__lte'] = data.get('max_price')         
+        return filter_product
+
     def export_to_file(type_file):
         if type_file == 'csv':
             with open('testss.csv', 'w', newline='',encoding='utf-8') as f:
@@ -52,7 +116,7 @@ class ProductServices:
 
                 export_file.writeheader()
 
-                all_products = models.Product.objects.all()
+                all_products = Product.objects.all()
                 for item in all_products:
                     all_categories = item.cid.all()
                     lst_categories = []
@@ -86,7 +150,7 @@ class ProductServices:
             row = 0
             col = 0
 
-            all_products = models.Product.objects.all()
+            all_products = Product.objects.all()
             for item in all_products:
                 all_categories = item.cid.all()
                 lst_categories = []
@@ -148,7 +212,7 @@ class ProductServices:
     def get_all_products_in_categories(lts_categories: list):
         """ lst_categories - список с ID категорий. 
         возвращает QuerySet со всеми товарами категорий  """
-        return models.Product.objects.filter(cid__pk__in = lts_categories)
+        return Product.objects.filter(cid__pk__in = lts_categories)
 
 
     def edit_price_products(products, type_edit: str, value_edit: float, is_edit_old_price = False):
@@ -221,8 +285,8 @@ class ImportSheet:
                 price = float(row[5])
                 old_price = float(row[6])
                 stock = int(row[7])
-                category_exists = models.Categories.objects.filter(name=row[0]).exists()
-                category = models.Categories.objects.get(name = row[0]) if category_exists else models.Categories(name = row[0]).save()
+                category_exists = Categories.objects.filter(name=row[0]).exists()
+                category = Categories.objects.get(name = row[0]) if category_exists else Categories(name = row[0]).save()
                 default_data = {
                     'brand':row[2],
                     'desc' : row[3],
@@ -231,7 +295,7 @@ class ImportSheet:
                     'old_price' : old_price,
                     'stock' : stock,
                 }
-                product_obj, product_new = models.Product.objects.get_or_create(title = row[1], defaults = default_data)
+                product_obj, product_new = Product.objects.get_or_create(title = row[1], defaults = default_data)
                 if product_new:
                     product_obj.cid.add(category)
                 else:
