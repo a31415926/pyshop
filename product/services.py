@@ -48,7 +48,7 @@ class Basket:
                 user = CustomUser.objects.get(id = user_id),
                 product = product,
                 defaults = {'qty' : now_qty + int(qty),
-                    'title' : product.title, 'price' : product.price,})
+                    'price' : product.price,})
             if not create_basket:
                 bsk.qty = now_qty + int(qty)
                 bsk.save()

@@ -218,12 +218,30 @@ class FileTelegram(models.Model):
     id_file = models.CharField(max_length=100)
 
 
+class BasketQuerySet(models.QuerySet):
+
+    def get_total_amount(self):
+        total = 0
+        for i in self:
+            total += i.qty * i.price
+        return total
+
+class BasketManager(models.Manager):
+    _queryset_class = BasketQuerySet
+
+
 class BasketItem(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Пользователь')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Товар', null=True)
     qty = models.IntegerField(default=1, verbose_name='Количество')
     price = models.FloatField(verbose_name='Стоимость за ед.')
-    title = models.CharField(max_length=200, verbose_name='Название товара')
+    date_add = models.DateTimeField(auto_now=True)
 
+    objects = BasketManager()
 
+    class Meta:
+        
+        permissions = (
+            ('show_all_baskets', 'Просматривать корзины других пользователей'),
+        )        

@@ -4,6 +4,12 @@ from product.models import *
 from rest_framework.authtoken.models import Token
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'email']
+
+
 class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Token
@@ -30,7 +36,28 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class BasketSerializer(serializers.ModelSerializer):
-
+    product_info = ProductSerializer(source='product', read_only=True)
     class Meta:
         model = BasketItem
-        fields = ['qty',]
+        fields = ['qty', 'price', 'user', 'product_info', 'product']
+
+
+    def to_representation(self, obj):
+        # get the original representation
+        ret = super(BasketSerializer, self).to_representation(obj)
+        ret.pop('user')
+        ret['total_amount_product'] = ret['qty']*ret['price']
+        return ret 
+
+    def create(self, validated_data):
+        item, created = BasketItem.objects.get_or_create(
+            user = validated_data.pop('user'),
+            product = validated_data.pop('product'),
+            defaults={
+                **validated_data
+            }
+        )
+        if not created:
+            item.qty += validated_data.get('qty')
+            item.save()
+        return item

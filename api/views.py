@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from api import serializers
-from rest_framework import permissions
+from rest_framework import permissions, viewsets
 from accounts.models import CustomUser
 from product.models import *
 from django.contrib.sessions.models import Session
@@ -87,12 +87,96 @@ class MatrixAPI(APIView):
     
 class Basket(APIView):
 
+    def get_object(self, data):
+        try:
+            return BasketItem.objects.get(**data)
+        except BasketItem.DoesNotExist:
+            raise Http404
+    
+
+    def get_objects(self, data):
+        return BasketItem.objects.filter(**data)
+    
+    def get_basket(self, user):
+        return BasketItem.objects.filter(user=user)
+
+
     def get(self, request, format=None):
         context = {}
-        basket = BasketItem.objects.filter(user=request.user)
+        data = request.GET
+        show_all = request.user.has_perm('product.show_all_basket')
+        if data.get('user_id') and show_all:
+            try: 
+                user = CustomUser.objects.get(id = data.get('user_id'))
+            except CustomUser.DoesNotExist:
+                user = request.user
+            basket = self.get_basket(user)
+        else:
+            basket = self.get_basket(request.user)
         serializer = serializers.BasketSerializer(basket, many=True)
         context['success'] = serializer.data
         return Response(context)
+
+
+    def post(self, request, format=None):
+        context = {}
+        data_request = request.POST
+        data = {}
+        product_id = data_request.get('id')
+        data['qty'] = data_request.get('cnt', 1)
+        try:
+            product = Product.objects.get(id = product_id)
+            data['product'] = product.id
+            data['user'] = request.user.id
+            data['price'] = product.price
+        except Product.DoesNotExist:
+            error = 'Product not found'
+        serializer = serializers.BasketSerializer(data = data)
+        if serializer.is_valid():
+            serializer.save()
+            get_basket = self.get_basket(request.user)
+            serializer = serializers.BasketSerializer(get_basket, many=True)
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+
+        
+    def put(self, request, format=None):
+        context = {}
+        data_request = request.POST
+        data = {}
+        snippet = self.get_object({
+            'user':request.user.id,
+            'product':data_request.get('id')
+        })
+        data['qty'] = data_request.get('cnt', 1)
+        serializer = serializers.BasketSerializer(snippet, data = data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            context['success'] = serializer.data
+            return Response(context)
+        else:
+            return Response(serializer.errors)
+    
+
+    def delete(self, request, format=None):
+        context = {}
+        data_request = request.POST
+        data = {}
+        data['user'] = request.user.id
+        data['product'] = data_request.get('id')
+        if data['product']:
+            item = self.get_object(data)
+        else:
+            data.pop('product')
+            item = self.get_objects(data)
+        item.delete()
+        get_basket = self.get_basket(request.user)
+        serializer = serializers.BasketSerializer(get_basket, many=True)
+        context['success'] = serializer.data
+
+        return Response(context)
+
 
 
 class ProductAPI(APIView):
