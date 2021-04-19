@@ -44,9 +44,9 @@
         <td>{{invoice.user}}</td>
         <td>{{invoice.promo}}</td>
         <td>{{invoice.currency}}</td>
-        <td>{{invoice.total_amount_on_curr}}<br><small title='в у.е.'>{{invoice.total_amount}}</small></td>
-        <td>{{ invoice.cost_of_delivery_on_curr}}</td>
-        <td>{{ invoice.total_amount_on_curr}}</td>
+        <td>{{invoice.total_amount|mul:invoice.rate_currency}}<br><small title='в у.е.'>{{invoice.total_amount}}</small></td>
+        <td>{{ invoice.cost_of_delivery|mul:invoice.rate_currency}}</td>
+        <td>{{ invoice.total_amount|mul:invoice.rate_currency}}</td>
         <td>
             <form action="{% url 'change_invoice' %}" method="POST" id='change_status_{{invoice.id}}'>
                 {%csrf_token%}

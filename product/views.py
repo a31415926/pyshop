@@ -21,7 +21,6 @@ def category_page(request, pk):
     return render(request, 'product/category_page.html', context={'products':category})
 
 def product_page(request, pk):
-    print(request.user.id)
     product = get_object_or_404(Product, pk=pk)
     return render(request, 'product/product_page.html', context={'product':product})
 
@@ -38,11 +37,8 @@ def basket(request):
         type_basket = request.POST.get('type')
         product_id = request.POST.get('id')
         
-        #защита от дурака, чтобы не отправили null, дефолтное будет 1
         product_cnt = request.POST.get('cnt', 1)
         product_cnt = 1 if not product_cnt else product_cnt   
-        if not request.session.get('basket'):
-            request.session['basket'] = {}
         if type_basket == 'add':
             basket = services.Basket.add2basket(basket, product_id, product_cnt, user_id=request.user.id)
             data_response = {'success': f'Добавлено в корзину {product_cnt} товаров'}
@@ -71,7 +67,7 @@ def checkout_page(request):
     delivery = Delivery.objects.all()
     if request.method == 'POST':
         data = request.POST.copy()
-        id_delivery = data.get('delivery', 1)
+        id_delivery = data.get('delivery')
         order_delivery = Delivery.objects.get(pk=id_delivery)
         order_currency = Currency.objects.get(code = request.session.get('curr_id', 'UAH'))
         promocode = data.get('promo_code')
@@ -86,13 +82,10 @@ def checkout_page(request):
         data['user'] = request.user if request.user.is_authenticated else ''
         data['full_amount'] = total_cost
         data['total_amount'] = total_cost_with_discount + cost_delivery
-        data['full_amount_on_curr'] = total_cost*order_currency.rate
-        data['total_amount_on_curr'] = data['total_amount'] * order_currency.rate
         data['currency'] = order_currency
         data['rate_currency'] = order_currency.rate
         data['delivery_method'] = order_delivery
         data['cost_of_delivery'] = cost_delivery
-        data['cost_of_delivery_on_curr'] = cost_delivery * order_currency.rate
         create_order = forms.OrderForm(data)
         print(create_order.errors)
 
@@ -101,13 +94,12 @@ def checkout_page(request):
             if request.user:
                 subscribe.subscribe_create_order(request.user.id, new_order.id, new_order.get_absolute_url())
             for good in basket.values():
-                OrderItem.objects.create(
-                    product=Product.objects.get(pk=good['id']),
-                    id_good = good['id'], title_good = good['title'],
-                    cost = good['price'],
-                    cost_on_curr = good['price'] * order_currency.rate,
-                    order = new_order, qty = good['qty'],
-                )
+                item = {
+                    'product':Product.objects.get(pk=good['id']),
+                    'order':new_order,
+                    'qty':good['qty'],
+                }
+                OrderItem.add_item(item)
 
             return redirect('invoice_page', new_order.id)  
 
@@ -158,7 +150,7 @@ def get_invoice(request, pk):
     if request.user.is_authenticated and order.user:
         if request.user.id == order.user.id:
             user_balance = order.user.balance
-            if user_balance >= order.total_amount_on_curr and order.status != 'paid':
+            if user_balance >= order.total_amount and order.status != 'paid':
                 context['pay'] = True
 
     if order.status == 'paid' and request.user.has_perm('product.change_status'):
@@ -170,12 +162,12 @@ def get_invoice(request, pk):
         if meta == 'pay_order':
             if context.get('pay'):
                 Order.change_status(pk, 'paid')
-                order.user.balance -= order.total_amount_on_curr
+                order.user.balance -= order.total_amount
                 order.user.save()
                 context['pay'] = False
         elif meta=='cancel_order' and context.get('cancel_order'):
                 Order.change_status(pk, 'cancel')
-                order.user.balance += order.total_amount_on_curr
+                order.user.balance += order.total_amount
                 order.user.save()
                 context['pay'] = True
                 context['cancel_order'] = False
@@ -194,52 +186,36 @@ def edit_invoice(request, pk):
     context['order'] = order
     if request.method == 'POST':
         mode  = request.POST.get('mode') 
-        print(request.POST)
         data = request.POST
         if mode == 'edit_invoice':
-            full_amount = 0
             for good in goods:
-                edit_price = data.get(f'price_{good.id}')
-                edit_qty = data.get(f'qty_{good.id}')
-                del_good = data.get(f'del_{good.id}')
+                try:
+                    edit_price = float(data.get(f'price_{good.id}'))
+                    edit_qty = int(data.get(f'qty_{good.id}'))
+                    del_good = data.get(f'del_{good.id}')
+                except ValueError:
+                    break
                 if edit_price and edit_qty:
                     if del_good:
                         OrderItem.objects.get(pk = good.id).delete()
                         continue
-                    edit_price = float(edit_price)
-                    full_amount += edit_price * int(edit_qty) / order.rate_currency
-                    order_item = OrderItem.objects.get(pk = good.id)
-                    order_item.qty = int(edit_qty)
-                    order_item.cost_on_curr = edit_price
-                    order_item.save()
-                    order.full_amount = full_amount
-                    order.full_amount_on_curr = full_amount * order.rate_currency
-                    discount = 0
-                    if order.promo:
-                        discount = Promocode.get_discount(full_amount, order.promo.code)
-                    order.total_amount = full_amount + discount
-                    order.total_amount_on_curr = (full_amount + discount) * order.rate_currency
-                    order.save()
+                    
+                    item_info={
+                        'pk':good.id,
+                        'price':edit_price,
+                        'qty':edit_qty,
+                    }
+                    OrderItem.add_item(item_info)
             goods = order.orderitem_set.all()
         
         elif mode == 'add_good':
-            id_good = data['id_good']
             product = get_object_or_404(Product, pk = id_good)
-            obj, create_item = OrderItem.objects.get_or_create(
-                    order=order, 
-                    id_good = id_good, 
-                    defaults= {
-                        'cost_on_curr':product.price * order.rate_currency,
-                        'title_good':product.title
-                        }
-            )
-            print(obj, create_item)
-
-            if not create_item:
-                obj.qty += 1
-                obj.save()
-            order.total_amount_on_curr += product.price * order.rate_currency
-            order.save()
+            item_info = {
+                'product':product,
+                'order':order,
+            }
+            OrderItem.add_item(item_info)
+        order.recalc_order()
     context['goods'] = goods
                 
             

@@ -99,7 +99,6 @@ class Delivery(models.Model):
                     break
 
         cost_of_delivery = round(cost_of_delivery, 2)
-        print(cost_of_delivery)
         return cost_of_delivery
 
 class Promocode(models.Model):
@@ -151,6 +150,13 @@ class Promocode(models.Model):
         elif promo.type_code == 'relative':
             discount = total_sum * promo.amount_of_discount / 100
         return discount
+    
+    def get_sum_discount(self, total_amount):
+        if self.type_code == 'fixed':
+                discount = self.amount_of_discount
+        elif self.type_code == 'relative':
+            discount = total_amount * self.amount_of_discount / 100
+        return discount
 
 
 class Order(models.Model):
@@ -165,8 +171,6 @@ class Order(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, null=True, blank=True)
     full_amount = models.FloatField(default=0, verbose_name='Полная стоимость товаров в у.е.')
     total_amount = models.FloatField(default=0, verbose_name='Сумма к оплате в у.е.')
-    full_amount_on_curr = models.FloatField(default=0, verbose_name='Полная стоимость товаров с учетом курса')
-    total_amount_on_curr = models.FloatField(default=0, verbose_name='Сумма к оплате с учетом курса')
     date_create = models.DateTimeField(auto_now_add=True)
     status = models.CharField(default='new', choices=status_choices, max_length=50, verbose_name='Статус заказа')
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name='Валюта')
@@ -174,7 +178,6 @@ class Order(models.Model):
     promo = models.ForeignKey(Promocode, on_delete=models.PROTECT, blank=True, null=True, default='', verbose_name='Промокод')
     delivery_method = models.ForeignKey(Delivery, null=True, blank=True, on_delete=models.PROTECT, verbose_name='Способ доставки')
     cost_of_delivery = models.FloatField(default=0, verbose_name='Стоимость доставки')
-    cost_of_delivery_on_curr = models.FloatField(default=0, verbose_name='Стоимость доставки в валюте')
 
 
     class Meta:
@@ -190,8 +193,6 @@ class Order(models.Model):
         self.total_amount = round(self.total_amount, 2)
         self.cost_of_delivery = round(self.cost_of_delivery, 2)
         self.rate_currency = round(self.rate_currency, 2)
-        self.total_amount_on_curr = round(self.total_amount_on_curr, 2)
-        self.full_amount_on_curr = round(self.full_amount_on_curr, 2)
         super(Order, self).save(*args, **kwargs)
 
 
@@ -201,15 +202,70 @@ class Order(models.Model):
         obj.status = new_status
         obj.save()
 
+    def recalc_order(self):
+        order_item = self.orderitem_set.all()
+        self.full_amount = order_item.get_total_amount()
+        self.get_sum_discount = self.promo.get_sum_discount(self.full_amount)
+        self.cost_of_delivery = Delivery.calc_cost_of_delivery(self.delivery_method.id, self.full_amount + self.get_sum_discount)
+        self.total_amount = self.full_amount + self.get_sum_discount + self.cost_of_delivery
+        self.cost_of_delivery_on_curr = self.cost_of_delivery * self.rate_currency
+        self.total_amount_on_curr = self.total_amount * self.rate_currency
+        self.full_amount_on_curr = self.full_amount * self.rate_currency
+        self.save()
+
+
+class OrdetItemQuerySet(models.QuerySet):
+
+    def get_total_amount(self):
+        total = 0
+        for i in self:
+            total += i.qty * i.cost
+        return total
+
+class OrderItemManager(models.Manager):
+    _queryset_class = OrdetItemQuerySet
+
+
 class OrderItem(models.Model):
     #содержимое заказов
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     id_good = models.IntegerField(default=1)
     title_good = models.CharField(default='Noname', max_length=300)
     cost = models.FloatField(default=1)
-    cost_on_curr = models.FloatField(default=1)
     qty = models.IntegerField(default=1)
     order = models.ForeignKey('Order', on_delete=models.CASCADE)
+
+
+    objects = OrderItemManager()
+
+
+    @classmethod
+    def add_item(cls, data):
+        if data.get('pk'):
+            try:
+                obj = cls.objects.get(pk = data.get('pk'))
+                price = data.get('price')/obj.order.rate_currency if data.get('price') else obj.cost 
+                obj.cost = price
+                obj.qty = data.get('qty', obj.qty)
+                obj.save()
+            except cls.DoesNotExist:
+                return False
+        else:
+            item, create = cls.objects.update_or_create(
+                order = data.get('order'),
+                product = data.get('product'),
+                defaults = {
+                    'title_good':data.get('title', data['product'].title),
+                    'qty':data.get('qty', 1),
+                    'cost':data.get('price', data['product'].price)
+                }
+            )
+            if not create:
+                item.qty += 1
+                item.save()
+        
+
+
 
 
 class FileTelegram(models.Model):
