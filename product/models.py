@@ -1,9 +1,10 @@
-from django.db import models
+from django.db import models, utils
 from accounts.models import CustomUser
 from django.db.models.signals import post_delete
 from django.urls import reverse
 from datetime import date
 import os
+from django.utils.crypto import get_random_string
 
 
 class PriceMatrix(models.Model):
@@ -157,6 +158,26 @@ class Promocode(models.Model):
         elif self.type_code == 'relative':
             discount = total_amount * self.amount_of_discount / 100
         return discount
+
+    
+    @classmethod
+    def generate_new_promocode(cls, type_code = 'relative', type_promo = 'onceuse', value = '-10', start = None, end = None, str_len = 15, cnt = 1):
+        promo = []
+        for _ in range(cnt):
+            while True:
+                try:
+                    obj = cls.objects.create(
+                        code=get_random_string(str_len),
+                        type_code=type_code,
+                        type_promo=type_promo,
+                        amount_of_discount=value,
+                    )
+                    promo.append(obj.code)
+                    break
+                except utils.IntegrityError:
+                    continue
+        return promo
+        
 
 
 class Order(models.Model):
