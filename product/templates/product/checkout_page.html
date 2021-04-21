@@ -28,15 +28,17 @@
     {%csrf_token%}
 
   {% for delivery in all_delivery%}
-    <input type="radio" name = 'delivery' value="{{delivery.id}}">
+    <input type="radio" name = 'delivery' value="{{delivery.id}}" id="">
     <b>{{delivery.name}}</b>
     {{delivery.description}}
     <br>
   {%endfor%}
-  PROMO:  <input type="text" name ='promo_code'><br>
+  PROMO:  <input type="text" name ='promo_code' id='promo_code'><button type="button" onclick="is_promo()" id="btn_promo">Проверить</button><br>
   <button type="submit">Оформить</button>
   </form>
-  <p>Общая стоимость: {{total_cost|mul:rate_select_currency |floatformat:2 }} {{disp_select_currency}}</p>
+  <div id="sum_info">
+    <p>Общая стоимость: {{total_cost|mul:rate_select_currency |floatformat:2 }} {{disp_select_currency}}</p>
+  </div>
   <script>document.getElementsByName("delivery")[0].checked = true;</script>
   <script>
     function del_basket(id){
@@ -52,6 +54,25 @@
                 }
             }
         });
-}
+  }
+    function is_promo(){
+      $.ajax({
+        type:'POST', url: '{% url "basket_page" %}',
+        data:{'csrfmiddlewaretoken':scrf_token, 'promocode':$('#promo_code').val(),},
+        dataType: 'json',
+        cache: false,
+        success: function(data){
+            if (data.success){
+              $('#sum_info').append('<p>Сумма с учетом скидки - '+data.success+'</p>')
+            }
+            else{
+              var $item = $('<span class="error_promo">'+data.error+'</span>');
+              $item.after('#btn_promo').delay(4000).slideUp(500, function(){
+                $item.remove();
+              });
+            }
+        }
+      })
+    }
 </script>
   {% endblock %}

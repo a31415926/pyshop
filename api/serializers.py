@@ -36,7 +36,9 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class BasketSerializer(serializers.ModelSerializer):
+    #product_info = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
     product_info = ProductSerializer(source='product', read_only=True)
+    
     class Meta:
         model = BasketItem
         fields = ['qty', 'price', 'user', 'product_info', 'product']

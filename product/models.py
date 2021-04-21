@@ -152,7 +152,8 @@ class Promocode(models.Model):
             discount = total_sum * promo.amount_of_discount / 100
         return discount
     
-    def get_sum_discount(self, total_amount):
+    def get_sum_discount(self, total_amount=None):
+        discount = 0
         if self.type_code == 'fixed':
                 discount = self.amount_of_discount
         elif self.type_code == 'relative':
@@ -196,7 +197,7 @@ class Order(models.Model):
     status = models.CharField(default='new', choices=status_choices, max_length=50, verbose_name='Статус заказа')
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name='Валюта')
     rate_currency = models.FloatField(default=1, verbose_name='Курс валюты в момент заказа')
-    promo = models.ForeignKey(Promocode, on_delete=models.PROTECT, blank=True, null=True, default='', verbose_name='Промокод')
+    promo = models.ForeignKey(Promocode, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Промокод')
     delivery_method = models.ForeignKey(Delivery, null=True, blank=True, on_delete=models.PROTECT, verbose_name='Способ доставки')
     cost_of_delivery = models.FloatField(default=0, verbose_name='Стоимость доставки')
 
@@ -226,9 +227,9 @@ class Order(models.Model):
     def recalc_order(self):
         order_item = self.orderitem_set.all()
         self.full_amount = order_item.get_total_amount()
-        self.get_sum_discount = self.promo.get_sum_discount(self.full_amount)
-        self.cost_of_delivery = Delivery.calc_cost_of_delivery(self.delivery_method.id, self.full_amount + self.get_sum_discount)
-        self.total_amount = self.full_amount + self.get_sum_discount + self.cost_of_delivery
+        promo = self.promo.get_sum_discount(self.full_amount) if self.promo else 0
+        self.cost_of_delivery = Delivery.calc_cost_of_delivery(self.delivery_method.id, self.full_amount + promo)
+        self.total_amount = self.full_amount + promo + self.cost_of_delivery
         self.cost_of_delivery_on_curr = self.cost_of_delivery * self.rate_currency
         self.total_amount_on_curr = self.total_amount * self.rate_currency
         self.full_amount_on_curr = self.full_amount * self.rate_currency

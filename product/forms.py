@@ -5,8 +5,8 @@ from product.models import Order, OrderItem, Promocode
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['user', 'full_amount', 'total_amount', 'currency', 'rate_currency',
-        'promo', 'delivery_method', 'cost_of_delivery']
+        fields = ['user', 'currency', 'rate_currency',
+        'promo', 'delivery_method',]
 
 
 class ChangeStatusOrder(forms.ModelForm):

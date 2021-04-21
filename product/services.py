@@ -23,6 +23,7 @@ class Basket:
         if user_id:
             user = get_object_or_404(CustomUser, id = user_id)
             basket_obj = BasketItem.objects.filter(user_id = user)
+            full_sum = 0 
             for i in basket_obj:
                 basket[str(i.product.id)] = {
                     'id': i.product.id,
@@ -31,6 +32,7 @@ class Basket:
                     'qty': i.qty,
                     'price': i.price,
                 }
+                full_sum += i.qty * i.price
         return basket
     
     def add2basket(basket, product_id, qty, user_id = None):

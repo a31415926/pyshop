@@ -9,6 +9,7 @@ import json
 import requests
 from accounts import subscribe
 import datetime
+from product import convert_html
 
 
 def shop_main_page(request):
@@ -21,8 +22,18 @@ def category_page(request, pk):
     return render(request, 'product/category_page.html', context={'products':category})
 
 def product_page(request, pk):
+    context = {}
+    viewed_products = request.session.get('viewed_products', {})
     product = get_object_or_404(Product, pk=pk)
-    return render(request, 'product/product_page.html', context={'product':product})
+    viewed_products.pop(str(product.id), None)
+    if len(viewed_products) >= 6: del viewed_products[next(iter(viewed_products))]
+    viewed_products_html = convert_html.viewed_products(viewed_products)
+    context['product'] = product
+    viewed_products[str(product.id)] = {'id':product.id, 'title':product.title, 'price':product.price, 'desc':product.desc}
+    request.session['viewed_products'] = viewed_products
+    print(viewed_products)
+    context['viewed_products'] = viewed_products_html
+    return render(request, 'product/product_page.html', context)
 
 def select_curr(request):
     if request.method == 'POST':
@@ -36,7 +47,8 @@ def basket(request):
         basket = services.Basket.get_basket(request.user.id) if request.user.is_authenticated else request.session.get('basket', {})
         type_basket = request.POST.get('type')
         product_id = request.POST.get('id')
-        
+        check_promo = request.POST.get('promocode')
+        data_response={}
         product_cnt = request.POST.get('cnt', 1)
         product_cnt = 1 if not product_cnt else product_cnt   
         if type_basket == 'add':
@@ -55,15 +67,26 @@ def basket(request):
                     
             html_result += ''
             data_response = {'success':'Удалено', 'responce':html_result}
+        elif check_promo:
+            promo = Promocode.objects.filter(code = check_promo).first()
+            if promo:
+                sum_discount = promo.get_sum_discount(basket['full_sum_basket'])
+                if sum_discount:
+                    total_sum = round((basket['full_sum_basket'] + sum_discount)*request.session['rate_curr'], 2)
+                    data_response = {'success':total_sum}
+                else:
+                    data_response={'error':'Промо не найден.'}
+            else:
+                data_response={'error':'Промо не найден.'}
+            
         request.session['basket'] = basket
+
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
 
 def checkout_page(request):
     basket = services.Basket.get_basket(request.user.id) if request.user.is_authenticated else request.session.get('basket', {})
-    total_cost = 0
-    for i in basket.values():
-        total_cost += i['qty'] * i['price']
+    total_cost = sum([i['qty'] * i['price'] for i in basket.values()])
     delivery = Delivery.objects.all()
     if request.method == 'POST':
         data = request.POST.copy()
@@ -76,16 +99,10 @@ def checkout_page(request):
             is_promo = Promocode.is_promo(data.get('promo_code'))
             if is_promo:
                 data['promo'] = Promocode.objects.get(code = data['promo_code'])
-        discount = Promocode.get_discount(total_cost, data['promo_code']) if is_promo else 0
-        total_cost_with_discount = total_cost + discount
-        cost_delivery = Delivery.calc_cost_of_delivery(id_delivery, total_cost_with_discount)
         data['user'] = request.user if request.user.is_authenticated else ''
-        data['full_amount'] = total_cost
-        data['total_amount'] = total_cost_with_discount + cost_delivery
         data['currency'] = order_currency
         data['rate_currency'] = order_currency.rate
         data['delivery_method'] = order_delivery
-        data['cost_of_delivery'] = cost_delivery
         create_order = forms.OrderForm(data)
         print(create_order.errors)
 
@@ -100,6 +117,7 @@ def checkout_page(request):
                     'qty':good['qty'],
                 }
                 OrderItem.add_item(item)
+                new_order.recalc_order()
 
             return redirect('invoice_page', new_order.id)  
 

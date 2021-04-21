@@ -12,6 +12,13 @@
         </div>
     </form>
 
+    {%if viewed_products %}
+    <br><br><br><br><br><p>Просмотренные товары:</p>
+    <div class="card-group">
+    {{viewed_products|safe}}
+    </div>
+    {%endif%}
+
     <script>
         function add2basket(id){
             var cnt = $('#cnt_product').val();

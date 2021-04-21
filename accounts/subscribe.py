@@ -3,9 +3,12 @@ from accounts.models import *
 from product.models import *
 import requests
 import json
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
 
-TG_TOKEN = '1729761851:AAHRK8aaNbAMuOj0qis-xOeB9p_rHZu1TPg'
+TG_TOKEN = os.environ.get('TG_TOKEN')
 
 
 def geo_ip_info(ip_address):
@@ -31,7 +34,6 @@ def subscribe_answer_support(id_user, text_answer):
 
 
 def subscribe_create_order(id_user, id_order, url_order):
-    print('tut')
     try:
         user = Subscribe.objects.get(user_id = id_user, is_create_order = True)
     except Subscribe.DoesNotExist:
@@ -66,6 +68,7 @@ def subscribe_promo(text_msg):
         id_tg = user.user.id_tg
         link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message[:200]}'
         req = requests.get(link)
+        print(req.json())
     
     
 def subscribe_get_file_in_order(id_user, id_order):
