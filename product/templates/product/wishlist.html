@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if products %}
+    <div class="card-group">
+        {{products|safe}}
+    </div>
+{%else%}
+Список желаний пуст
+{%endif%}
+
+<script>
+function wishlist(id, type_act){
+    var cnt = $('#cnt_product').val();
+    $.ajax({
+        type: 'POST', url: '{% url "wishlist" %}',
+        data:{'csrfmiddlewaretoken':scrf_token, 'type':type_act, 'id':id,},
+        dataType: 'json',
+        cache: false,
+        success: function(data){
+            if (data.success){
+                $('.card-group').html(data.success);
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

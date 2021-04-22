@@ -9,6 +9,13 @@
         <div class="form_add_basket">
             <input type="number" step='1' min=1 name='cnt' start='1' value="1" id="cnt_product">
             <button type='submit' onclick="add2basket('{{product.id}}')" id="btn_add2basket">Добавить в корзину</button>
+            {%if request.user.is_authenticated%}
+                {% if is_wishlist %}
+                    <button type="button" onclick="wishlist('{{product.id}}', 'del')" id='btn_wishlist'>Удалить из вишлиста</button>
+                {%else%}
+                    <button type="button" onclick="wishlist('{{product.id}}', 'add')" id='btn_wishlist'>Добавить в вишлист</button>
+                {%endif%}
+            {%endif%}
         </div>
     </form>
 
@@ -30,6 +37,31 @@
                 success: function(data){
                     if (data.success){
                         var $item = $('<span class="msg">'+ data.success +'</span>');
+                        $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                    }
+                }
+            });
+    }
+        function wishlist(id, type_act){
+            var cnt = $('#cnt_product').val();
+            $.ajax({
+                type: 'POST', url: '{% url "wishlist" %}',
+                data:{'csrfmiddlewaretoken':scrf_token, 'type':type_act, 'id':id,},
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    if (data.success){
+                        var $item = $('<span class="msg">'+ data.success.msg +'</span>');
+                        if (type_act=='add'){
+                            $('#btn_wishlist').attr('onclick', 'wishlist({{product.id}}, "del")');
+                            $('#btn_wishlist').text('Удалить из вишлиста');
+                        }
+                        else if(type_act=='del'){
+                            $('#btn_wishlist').attr('onclick', 'wishlist({{product.id}}, "add")');
+                            $('#btn_wishlist').text('Добавить в вишлист');
+                        }
                         $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
                                 $item.remove();
                         });

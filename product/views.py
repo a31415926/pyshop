@@ -31,8 +31,13 @@ def product_page(request, pk):
     context['product'] = product
     viewed_products[str(product.id)] = {'id':product.id, 'title':product.title, 'price':product.price, 'desc':product.desc}
     request.session['viewed_products'] = viewed_products
-    print(viewed_products)
     context['viewed_products'] = viewed_products_html
+    if request.user.is_authenticated:
+        try:
+            context['is_wishlist']=product.wishlist_set.get(user = request.user)
+        except Wishlist.DoesNotExist:
+            context['is_wishlist'] = False
+
     return render(request, 'product/product_page.html', context)
 
 def select_curr(request):
@@ -171,7 +176,7 @@ def get_invoice(request, pk):
             if user_balance >= order.total_amount and order.status != 'paid':
                 context['pay'] = True
 
-    if order.status == 'paid' and request.user.has_perm('product.change_status'):
+    if order.is_paid and request.user.has_perm('product.change_status'):
         context['cancel_order'] = True
 
     if request.method == 'POST':
@@ -179,16 +184,10 @@ def get_invoice(request, pk):
         meta = data.get('mode')
         if meta == 'pay_order':
             if context.get('pay'):
-                Order.change_status(pk, 'paid')
-                order.user.balance -= order.total_amount
-                order.user.save()
-                context['pay'] = False
+                context['pay'] = not order.payment()
         elif meta=='cancel_order' and context.get('cancel_order'):
-                Order.change_status(pk, 'cancel')
-                order.user.balance += order.total_amount
-                order.user.save()
+                context['cancel_order'] = not order.cancel_order()
                 context['pay'] = True
-                context['cancel_order'] = False
 
     context['order'] = order
     context['goods'] = goods
@@ -319,3 +318,49 @@ def matrix(request):
             context['all_matrix'][matrix.name][f'value{item.pk}'] = item.value 
             context['all_matrix'][matrix.name]['id'] = item.pk 
     return render(request, template, context)
+
+
+
+def wishlist(request):
+    if request.method == 'POST':
+        data_response = {}
+        data = request.POST
+        type_action = data.get('type')
+        product = get_object_or_404(Product, pk = data.get('id'))
+        if type_action == 'add':
+            item, create = Wishlist.objects.get_or_create(
+                user = request.user,
+                product = product,
+            )
+            if create:
+                data_response['success'] = {'msg':'Товар добавлен в список желаний'}
+            else:
+                data_response['error'] = {'msg':'Товар уже в списке желаний'}
+        elif type_action == 'del':
+            try:
+                Wishlist.objects.get(
+                    user = request.user, 
+                    product = product,
+                ).delete()
+                data_response['success'] = {'msg':'Товар удален из списка желаний'}
+            except Wishlist.DoesNotExist:
+                data_response['error'] = {'msg':'Товар не найден в списке желаний'}
+        elif type_action=='del_for_wishlist':
+            try:
+                Wishlist.objects.get(
+                    user = request.user, 
+                    product = product,
+                ).delete()
+                wishlist = Wishlist.objects.filter(user = request.user)
+                data_response['success'] = convert_html.my_wishlist(wishlist)
+            except Wishlist.DoesNotExist:
+                data_response['error'] = {'msg':'Товар не найден в списке желаний'}
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
+
+    elif request.method == 'GET':
+        context = {}
+        template = 'product/wishlist.html'
+        wishlist = Wishlist.objects.filter(user = request.user)
+        context['products'] = convert_html.my_wishlist(wishlist) 
+        return render(request, template, context)

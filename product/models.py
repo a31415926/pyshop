@@ -185,8 +185,8 @@ class Order(models.Model):
     #user = 
     status_choices = [
         ('new', 'Новый'),
-        ('paid', 'Оплачен'),
         ('processing', 'В обработке'),
+        ('paid', 'Оплачен'),
         ('finished', 'Завершен'),
         ('cancel', 'Отменен'),
     ]
@@ -200,6 +200,7 @@ class Order(models.Model):
     promo = models.ForeignKey(Promocode, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Промокод')
     delivery_method = models.ForeignKey(Delivery, null=True, blank=True, on_delete=models.PROTECT, verbose_name='Способ доставки')
     cost_of_delivery = models.FloatField(default=0, verbose_name='Стоимость доставки')
+    is_paid = models.BooleanField(default=False, verbose_name='Было ли списание средств.')
 
 
     class Meta:
@@ -216,6 +217,26 @@ class Order(models.Model):
         self.cost_of_delivery = round(self.cost_of_delivery, 2)
         self.rate_currency = round(self.rate_currency, 2)
         super(Order, self).save(*args, **kwargs)
+    
+
+    def payment(self):
+        if self.user.balance >= self.total_amount:
+            self.is_paid = True
+            self.status = 'paid'
+            self.user.balance = self.user.balance - self.total_amount
+            self.user.save()
+            self.save()
+            return True
+        return False
+
+    def cancel_order(self):
+        self.status = 'cancel'
+        if self.is_paid:
+            self.is_paid = False
+            self.user.balance += self.total_amount
+            self.user.save()
+        self.save()
+        return True
 
 
     @classmethod
@@ -323,3 +344,11 @@ class BasketItem(models.Model):
         permissions = (
             ('show_all_baskets', 'Просматривать корзины других пользователей'),
         )        
+
+
+class Wishlist(models.Model):
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete = models.CASCADE)
+
+    
