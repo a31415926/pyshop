@@ -10,6 +10,22 @@
 {%endif%}
 
 <script>
+    function add2basket(id){
+            var cnt = $('#cnt_product_'+id).val();
+            $.ajax({
+                type: 'POST', url: '{% url "basket_page" %}',
+                data:{'csrfmiddlewaretoken':scrf_token, 'cnt':cnt, 'type':'add', 'id':id,},
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    if (data.success){
+                        var $item = $('<div class="msg">'+ data.success +'</div>');
+                        $item.appendTo('.btn_basket_'+id).delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                    }
+                }
+            });}
 function wishlist(id, type_act){
     var cnt = $('#cnt_product').val();
     $.ajax({
