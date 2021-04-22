@@ -1,8 +1,11 @@
 import django_heroku
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 import dj_database_url
 
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -117,14 +120,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-"""AWS_ACCESS_KEY_ID = 'AKIAZEVKKIJXWW7KOYEE'
-AWS_SECRET_ACCESS_KEY = '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'
-AWS_STORAGE_BUCKET_NAME = 'project-geek'
-AWS_S3_CUSTOM_DOMAIN = 'project-geek.s3.us-east-2.amazonaws.com'
-AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',
-}
-AWS_DEFAULT_ACL = 'public-read'"""
+
 #AWS_LOCATION = 'static'
 
 # Static files (CSS, JavaScript, Images)
@@ -144,9 +140,9 @@ prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
 
 
-AWS_ACCESS_KEY_ID = 'AKIAZEVKKIJXWW7KOYEE'
-AWS_SECRET_ACCESS_KEY = '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'
-AWS_STORAGE_BUCKET_NAME = 'mytestb12'
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
