@@ -89,3 +89,9 @@ def subscribe_get_file_in_order(id_user, id_order):
             link = f'https://api.telegram.org/bot{TG_TOKEN}/sendDocument?chat_id=456008920&parse_mode=HTML'
             req = requests.post(link, files = files)
 
+
+def subscribe_edit_price(lst, name, new_price):
+    message = f'Изменилась цена на товар {name}\nНовая цена - {new_price}'
+    for id_tg in lst:
+        link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message[:200]}'
+        req = requests.get(link)

@@ -37,6 +37,11 @@ def product_page(request, pk):
             context['is_wishlist']=product.wishlist_set.get(user = request.user)
         except Wishlist.DoesNotExist:
             context['is_wishlist'] = False
+        try:
+            context['is_sub_edit_price']=product.subeditprice_set.get(user = request.user)
+        except SubEditPrice.DoesNotExist:
+            context['is_sub_edit_price']=False
+
 
     return render(request, 'product/product_page.html', context)
 
@@ -62,13 +67,16 @@ def basket(request):
         elif type_basket == 'del':
             basket = services.Basket.del2basket(basket, product_id, request.user.id)
             html_result = ""
-            for prodoct_id, product_val in basket.items():
-                html_result += f'<tr><th scope="row">1</th>'
-                html_result += f'<td><a href=\'{reverse("product_page", kwargs={"pk":product_id})}\'">{product_val["title"]}</a></td>'
+            count_items = 1
+            for product_val in basket.values():
+                id_product = product_val['id']
+                html_result += f'<tr><th scope="row">{count_items}</th>'
+                html_result += f'<td><a href=\'{reverse("product_page", kwargs={"pk":id_product})}\'">{product_val["title"]}</a></td>'
                 html_result += f'<td>посчитать</td>'
                 html_result += f'<td>{product_val["qty"]}</td>'
-                html_result += f'<td><button type=\'submit\' onclick="del_basket({product_id})">X</button></td>'
+                html_result += f'<td><button type=\'submit\' onclick="del_basket({id_product})">X</button></td>'
                 html_result += '</tr>'
+                count_items+=1
                     
             html_result += ''
             data_response = {'success':'Удалено', 'responce':html_result}
@@ -364,3 +372,31 @@ def wishlist(request):
         wishlist = Wishlist.objects.filter(user = request.user)
         context['products'] = convert_html.my_wishlist(wishlist) 
         return render(request, template, context)
+
+
+
+def subeditprice(request):
+    if request.method == 'POST':
+        data_response = {}
+        data = request.POST
+        type_action = data.get('type')
+        product = get_object_or_404(Product, pk = data.get('id'))
+        if type_action == 'add':
+            item, create = SubEditPrice.objects.get_or_create(
+                user = request.user,
+                product = product,
+            )
+            if create:
+                data_response['success'] = {'msg':'Товар добавлен в подписки'}
+            else:
+                data_response['error'] = {'msg':'Ты уже подписан'}
+        elif type_action == 'del':
+            try:
+                SubEditPrice.objects.get(
+                    user = request.user, 
+                    product = product,
+                ).delete()
+                data_response['success'] = {'msg':'Подписка отменена'}
+            except SubEditPrice.DoesNotExist:
+                data_response['error'] = {'msg':'Товар не найден в подписках'}
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')

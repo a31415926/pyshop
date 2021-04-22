@@ -5,7 +5,7 @@ from django.urls import reverse
 from datetime import date
 import os
 from django.utils.crypto import get_random_string
-
+from accounts.subscribe import subscribe_edit_price
 
 class PriceMatrix(models.Model):
     name = models.CharField(max_length=200, default='Name matrix', verbose_name='Название')
@@ -39,15 +39,32 @@ class Product(models.Model):
     date_add = models.DateTimeField(auto_now_add=True)
     date_edit = models.DateTimeField(auto_now=True)
     photo = models.FileField(default=None, null=True, blank=True)
+    
 
     def __str__(self):
         return self.title
 
+    __origin_price = None
+
+    def __init__(self, *args, **kwargs):
+        super(Product, self).__init__(*args, **kwargs)
+        self.__origin_price = self.price
+
     def save(self, *args, **kwargs):
         self.price = round(self.price, 2)
         self.old_price = round(self.old_price, 2)
+        if self.__origin_price != self.price:
+            self.get_list_tg_sub_edit_price()
         super(Product, self).save(*args, **kwargs)
     
+    def get_list_tg_sub_edit_price(self):
+        lst = []
+        all_user = self.subeditprice_set.all()
+        for user_sub in all_user:
+            lst.append(user_sub.user.id_tg)
+        subscribe_edit_price(lst, self.title, self.price)
+        
+
     def delete(self):
         self.photo.delete()
         super(Product, self).delete()
@@ -351,4 +368,8 @@ class Wishlist(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
 
-    
+
+class SubEditPrice(models.Model):
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)

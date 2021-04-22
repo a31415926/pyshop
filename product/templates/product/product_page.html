@@ -15,6 +15,13 @@
                 {%else%}
                     <button type="button" onclick="wishlist('{{product.id}}', 'add')" id='btn_wishlist'>Добавить в вишлист</button>
                 {%endif%}
+                {% if is_sub_edit_price %}
+                    <div>Вы подписаны на изменение цены</div>
+                    <button type="button" onclick="subeditprice('{{product.id}}', 'del')" id='btn_subeditprice'>Подписаться</button>
+                {%else%}
+                    <button type="button" onclick="subeditprice('{{product.id}}', 'add')" id='btn_subeditprice'>Подписаться на изменение цены</button>
+                {%endif%}
+
             {%endif%}
         </div>
     </form>
@@ -61,6 +68,30 @@
                         else if(type_act=='del'){
                             $('#btn_wishlist').attr('onclick', 'wishlist({{product.id}}, "add")');
                             $('#btn_wishlist').text('Добавить в вишлист');
+                        }
+                        $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                    }
+                }
+            });
+    }
+        function subeditprice(id, type_act){
+            $.ajax({
+                type: 'POST', url: '{% url "subeditprice" %}',
+                data:{'csrfmiddlewaretoken':scrf_token, 'type':type_act, 'id':id,},
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    if (data.success){
+                        var $item = $('<span class="msg">'+ data.success.msg +'</span>');
+                        if (type_act=='add'){
+                            $('#btn_subeditprice').attr('onclick', 'subeditprice({{product.id}}, "del")');
+                            $('#btn_subeditprice').text('Отписаться');
+                        }
+                        else if(type_act=='del'){
+                            $('#btn_subeditprice').attr('onclick', 'subeditprice({{product.id}}, "add")');
+                            $('#btn_subeditprice').text('Подписаться на изменение цен.');
                         }
                         $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
                                 $item.remove();

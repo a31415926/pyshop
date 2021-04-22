@@ -19,4 +19,5 @@ urlpatterns = [
     path('shop/matrix/', matrix, name = 'matrix'),
     path('shop/product/<int:pk>/', product_page, name='product_page'),
     path('shop/wishlist/', wishlist, name = 'wishlist'),
+    path('shop/subeditprice/', subeditprice, name = 'subeditprice'),
 ]

@@ -29,13 +29,13 @@
               <a class="nav-link" href="{% url 'invoices_page' %}">All invoices</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'checkout_page' %}">checkout</a>
+              <a class="nav-link" href="{% url 'checkout_page' %}">Checkout</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{% url 'create_promocode_page' %}">Create PROMO</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'edit_price_in_category' %}">edit price</a>
+              <a class="nav-link" href="{% url 'edit_price_in_category' %}">Edit price</a>
             </li>
           </ul>
           <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
@@ -51,11 +51,11 @@
             </li>
           </ul>
           {% if user.is_authenticated %}
-        <p>Welcome, {{ user.get_username }}.</p>
+        <p>Welcome, {%if user.username %}{{ user.username }}{%else%}{{user.email}}{%endif%}</p>
       {% else %}
         <p>anonymous</p>
       {% endif %}
-          <form class="form-inline my-2 my-lg-0">
+          <form class="form-inline my-2 my-lg-0 ml-2">
             <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
             <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
           </form>
