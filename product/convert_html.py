@@ -41,3 +41,14 @@ def recommend_products(data):
             f'<a href="/shop/product/{i.id}" class="btn btn-primary">open page</a></div></div>'
         )
     return responce_html
+
+
+def select_rating_product(id):
+    html_result = ''
+    html_result+=f'<select name="rating_product" id="rating_product">'
+    html_result+=f'<option value="0">Выбрать</option>'
+    for i in range(1, 11):
+        html_result += f'<option value={i}>{i}</option>'
+    html_result += '</select>'
+    html_result+=f'<button onclick="edit_ratign({id})">Проголосовать</button>'
+    return html_result

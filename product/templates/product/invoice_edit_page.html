@@ -19,7 +19,7 @@
         <tbody>
             {%for good in goods%}
                 <tr>
-                <td><a href="{% url 'product_page' good.id_good %}" target="_blank">{{good.title_good}}</a></td>
+                <td><a href="{% url 'product_page' good.id %}" target="_blank">{{good.title_good}}</a></td>
                 <td><input type="number" name = 'price_{{ good.id }}' value = {{good.cost|mul:order.rate_currency}}></td>
                 <td><input type="number" name = 'qty_{{ good.id }}' value = {{good.qty}}></td>
                 <td><input type="checkbox" name="del_{{ good.id }}" value="1"></td>

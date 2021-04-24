@@ -6,6 +6,17 @@
     {{ product.title }} <br>
     {% if product.file_digit %}{{product.file_digit.url}}{%endif%}
     {{ product.price|mul:rate_select_currency }} {{disp_select_currency}}<br>
+    <br><br>
+    {%if rating_product%}
+    <b><span id='rating'>Рейтинг товара: {{rating_product}}</span></b>
+    {%else%}
+    <p>Рейтинг отсутсвует. Никто не поставил оценку.</p>
+    {%endif%}
+    {%if request.user.is_authenticated%}
+        <div id='block_rating'>    
+            Выбери оценку: {{select_rating|safe}}
+        </div>
+    {%endif%} <br><br>
         <div class="form_add_basket">
             <input type="number" step='1' min=1 name='cnt' start='1' value="1" id="cnt_product">
             <button type='submit' onclick="add2basket('{{product.id}}')" id="btn_add2basket">Добавить в корзину</button>
@@ -104,6 +115,28 @@
                         });
                     }
                 }
+            });
+    }
+    function edit_ratign(id){
+        var rating = $('#rating_product').val();
+        $.ajax({
+                type: 'POST', url: '{% url "rating_product" %}',
+                data:{'csrfmiddlewaretoken':scrf_token, 'mark':rating, 'id':id,},
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    if (data.success){
+                        var $item = $('<span class="msg">'+ data.success +'</span>');
+                        $item.appendTo('#block_rating').delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                        if(data.new_avg){
+                            $('#rating').text('Рейтинг товара: '+data.new_avg)
+                        }else{
+                        $('#rating').text('Рейтинг отсутсвует. Никто не поставил оценку.')
+                    }}
+                },
+                error: function(data){console.log(data);}
             });
     }
     </script>

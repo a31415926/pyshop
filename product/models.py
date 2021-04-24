@@ -68,8 +68,19 @@ class Product(models.Model):
         
 
     def delete(self):
+        print('delete')
         self.photo.delete()
         super(Product, self).delete()
+
+    
+    def product_rating(self):
+        rating = self.rating_product.values('value_rating').aggregate(rating=models.Avg('value_rating'))
+        return rating.get('rating')
+
+    
+    def select_rating(self, user):
+        print(self.rating_product.values('value_rating').filter(user=user))
+
 
 
 class Categories(models.Model):
@@ -303,6 +314,7 @@ class OrderItem(models.Model):
 
     @classmethod
     def add_item(cls, data):
+        print(data)
         if data.get('pk'):
             try:
                 obj = cls.objects.get(pk = data.get('pk'))
@@ -313,18 +325,18 @@ class OrderItem(models.Model):
             except cls.DoesNotExist:
                 return False
         else:
-            item, create = cls.objects.update_or_create(
-                order = data.get('order'),
-                product = data.get('product'),
-                defaults = {
-                    'title_good':data.get('title', data['product'].title),
-                    'qty':data.get('qty', 1),
-                    'cost':data.get('price', data['product'].price)
-                }
-            )
-            if not create:
+            try:
+                item = cls.objects.get(order=data.get('order'), product=data.get('product'))
                 item.qty += 1
                 item.save()
+            except cls.DoesNotExist:
+                cls.objects.create(
+                    order=data.get('order'),
+                    product=data.get('product'),
+                    title_good=data.get('title', data['product'].title),
+                    qty=data.get('qty', 1),
+                    cost=data.get('price', data['product'].price)
+                )
         
 
 
@@ -376,9 +388,28 @@ class SubEditPrice(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
+class SubActivateProduct(models.Model):
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
 
 class RatingProduct(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='rating_user')
-    product = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='rating_product')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='rating_product')
     value_rating = models.IntegerField()
+
+
+    def save(self, *args, **kwargs):
+        super(RatingProduct, self).save(*args, **kwargs)
+        self.recalc_rating()
+    
+    
+    def recalc_rating(self):
+        pr_rating = RatingProduct.objects.filter(product = self.product).aggregate(avg=models.Avg('value_rating'))
+        self.product.rating = pr_rating.get('avg')
+        self.product.save()
+
+
+

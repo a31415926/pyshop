@@ -49,8 +49,11 @@ def product_page(request, pk):
         price__lt=product.price*1.3).order_by('?')[:5]
     recommend_products = rec_f1|rec_f2
     recommend_products = recommend_products[:5]
+    context['rating_product'] = product.rating
+    if request.user.is_authenticated:
+        select_rating = product.select_rating(user=request.user)
+        context['select_rating']=convert_html.select_rating_product(product.id)
     context['recommend_pr'] = convert_html.recommend_products(recommend_products)
-    print(recommend_products)
 
 
     return render(request, 'product/product_page.html', context)
@@ -244,7 +247,7 @@ def edit_invoice(request, pk):
             goods = order.orderitem_set.all()
         
         elif mode == 'add_good':
-            product = get_object_or_404(Product, pk = id_good)
+            product = get_object_or_404(Product, pk = data.get('id_good'))
             item_info = {
                 'product':product,
                 'order':order,
@@ -410,3 +413,28 @@ def subeditprice(request):
             except SubEditPrice.DoesNotExist:
                 data_response['error'] = {'msg':'Товар не найден в подписках'}
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
+
+def rating_product(request):
+    data_response = {}
+    if request.method == 'POST':
+        data = request.POST
+        mark = int(data.get('mark', 0))
+        try:
+            product = Product.objects.get(pk=data.get('id'))
+            if mark==0:
+                try:
+                    pr_delete = product.rating_product.get(user=request.user)
+                    pr_delete.delete()
+                    data_response['success'] = 'Оценка снята.'
+                    pr_delete.recalc_rating()
+                except RatingProduct.DoesNotExist:
+                    data_response['error'] = 'Вы еще не голосовали.'
+            else:
+                product.rating_product.update_or_create(user=request.user, 
+                    defaults={'value_rating':data.get('mark')})
+                data_response['success'] = 'Спасибо за оценку.'
+            data_response['new_avg'] = Product.objects.get(pk=data.get('id')).rating
+        except Product.DoesNotExist:
+            data_response['error'] = 'Некорректные параметры'
+    return HttpResponse(json.dumps(data_response), content_type='application/json')

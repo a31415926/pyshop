@@ -18,6 +18,7 @@ urlpatterns = [
     path('shop/import/', import_products, name = 'import_products'),
     path('shop/matrix/', matrix, name = 'matrix'),
     path('shop/product/<int:pk>/', product_page, name='product_page'),
+    path('shop/rating_product/', rating_product, name='rating_product'),
     path('shop/wishlist/', wishlist, name = 'wishlist'),
     path('shop/subeditprice/', subeditprice, name = 'subeditprice'),
 ]
