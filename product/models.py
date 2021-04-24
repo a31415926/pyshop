@@ -39,6 +39,8 @@ class Product(models.Model):
     date_add = models.DateTimeField(auto_now_add=True)
     date_edit = models.DateTimeField(auto_now=True)
     photo = models.FileField(default=None, null=True, blank=True)
+    is_recommend = models.BooleanField(default=False, verbose_name='Рекомендовать')
+    rating = models.FloatField(null=True, verbose_name='Рейтинг', blank=True)
     
 
     def __str__(self):
@@ -373,3 +375,10 @@ class SubEditPrice(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
+
+class RatingProduct(models.Model):
+
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='rating_user')
+    product = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='rating_product')
+    value_rating = models.IntegerField()

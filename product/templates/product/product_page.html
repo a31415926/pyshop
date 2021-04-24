@@ -27,9 +27,15 @@
     </form>
 
     {%if viewed_products %}
-    <br><br><br><br><br><p>Просмотренные товары:</p>
+    <br><br><br><br><br><h2>Просмотренные товары:</h2>
     <div class="card-group">
     {{viewed_products|safe}}
+    </div>
+    {%endif%}
+    {%if recommend_pr %}
+    <br><br><br><br><br><h2>Похожие товары:</h2>
+    <div class="card-group">
+    {{recommend_pr|safe}}
     </div>
     {%endif%}
 

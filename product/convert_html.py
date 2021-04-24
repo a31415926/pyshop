@@ -28,3 +28,16 @@ def my_wishlist(data):
             '</div></div>'            
         )
     return responce_html
+
+
+def recommend_products(data):
+    responce_html = ''
+    for i in data:
+        responce_html += (
+            f'<div class="card" style="width: 18rem;">'
+            f'<div class="card-body">'
+            f'<h5 class="card-title">{i.title}</h5>'
+            f'<p class="card-text">{i.desc}</p>'
+            f'<a href="/shop/product/{i.id}" class="btn btn-primary">open page</a></div></div>'
+        )
+    return responce_html

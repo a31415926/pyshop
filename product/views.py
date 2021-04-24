@@ -41,6 +41,16 @@ def product_page(request, pk):
             context['is_sub_edit_price']=product.subeditprice_set.get(user = request.user)
         except SubEditPrice.DoesNotExist:
             context['is_sub_edit_price']=False
+    lst_ids_cats = list(product.cid.values_list('id', flat=True))
+    rec_f1 = Product.objects.exclude(pk=product.pk).filter(is_recommend=True, cid__in=lst_ids_cats).order_by('?')[:1]
+    rec_f2 = Product.objects.exclude(pk=product.pk).filter(
+        cid__in=lst_ids_cats, 
+        price__gt=product.price*0.7, 
+        price__lt=product.price*1.3).order_by('?')[:5]
+    recommend_products = rec_f1|rec_f2
+    recommend_products = recommend_products[:5]
+    context['recommend_pr'] = convert_html.recommend_products(recommend_products)
+    print(recommend_products)
 
 
     return render(request, 'product/product_page.html', context)
@@ -72,7 +82,7 @@ def basket(request):
                 id_product = product_val['id']
                 html_result += f'<tr><th scope="row">{count_items}</th>'
                 html_result += f'<td><a href=\'{reverse("product_page", kwargs={"pk":id_product})}\'">{product_val["title"]}</a></td>'
-                html_result += f'<td>посчитать</td>'
+                html_result += f'<td>{product_val["price"] * request.session["rate_curr"]}</td>'
                 html_result += f'<td>{product_val["qty"]}</td>'
                 html_result += f'<td><button type=\'submit\' onclick="del_basket({id_product})">X</button></td>'
                 html_result += '</tr>'
