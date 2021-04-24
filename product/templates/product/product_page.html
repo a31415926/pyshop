@@ -10,7 +10,7 @@
     {%if rating_product%}
     <b><span id='rating'>Рейтинг товара: {{rating_product}}</span></b>
     {%else%}
-    <p>Рейтинг отсутсвует. Никто не поставил оценку.</p>
+    <p><span id='rating'>Рейтинг отсутсвует. Никто не поставил оценку.</span></p>
     {%endif%}
     {%if request.user.is_authenticated%}
         <div id='block_rating'>    

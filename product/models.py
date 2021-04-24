@@ -79,7 +79,10 @@ class Product(models.Model):
 
     
     def select_rating(self, user):
-        print(self.rating_product.values('value_rating').filter(user=user))
+        try:
+            return self.rating_product.get(user=user).value_rating
+        except RatingProduct.DoesNotExist:
+            return None
 
 
 

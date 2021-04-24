@@ -52,7 +52,7 @@ def product_page(request, pk):
     context['rating_product'] = product.rating
     if request.user.is_authenticated:
         select_rating = product.select_rating(user=request.user)
-        context['select_rating']=convert_html.select_rating_product(product.id)
+        context['select_rating']=convert_html.select_rating_product(product.id, select_rating)
     context['recommend_pr'] = convert_html.recommend_products(recommend_products)
 
 
