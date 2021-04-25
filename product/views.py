@@ -41,6 +41,10 @@ def product_page(request, pk):
             context['is_sub_edit_price']=product.subeditprice_set.get(user = request.user)
         except SubEditPrice.DoesNotExist:
             context['is_sub_edit_price']=False
+        try:
+            context['is_sub_active_product'] = product.subactivateproduct_set.get(user = request.user)
+        except SubActivateProduct.DoesNotExist:
+            context['is_sub_active_product'] = False
     lst_ids_cats = list(product.cid.values_list('id', flat=True))
     rec_f1 = Product.objects.exclude(pk=product.pk).filter(is_recommend=True, cid__in=lst_ids_cats).order_by('?')[:1]
     rec_f2 = Product.objects.exclude(pk=product.pk).filter(
@@ -411,6 +415,33 @@ def subeditprice(request):
                 ).delete()
                 data_response['success'] = {'msg':'Подписка отменена'}
             except SubEditPrice.DoesNotExist:
+                data_response['error'] = {'msg':'Товар не найден в подписках'}
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
+
+def subactivateproduct(request):
+    if request.method == 'POST':
+        data_response = {}
+        data = request.POST
+        type_action = data.get('type')
+        product = get_object_or_404(Product, pk = data.get('id'))
+        if type_action == 'add':
+            item, create = SubActivateProduct.objects.get_or_create(
+                user = request.user,
+                product = product,
+            )
+            if create:
+                data_response['success'] = {'msg':'Мы сообщим!'}
+            else:
+                data_response['error'] = {'msg':'Ты уже подписан'}
+        elif type_action == 'del':
+            try:
+                SubActivateProduct.objects.get(
+                    user = request.user, 
+                    product = product,
+                ).delete()
+                data_response['success'] = {'msg':'Подписка отменена'}
+            except SubActivateProduct.DoesNotExist:
                 data_response['error'] = {'msg':'Товар не найден в подписках'}
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 

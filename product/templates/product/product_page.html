@@ -4,13 +4,14 @@
 {% block content %}
     {% if product.photo %}<img src="{{product.photo.url}}">{%endif%}
     {{ product.title }} <br>
+    Остаток: {{product.stock}} <br>
+    Цена: {{ product.price|mul:rate_select_currency }} {{disp_select_currency}}<br>
     {% if product.file_digit %}{{product.file_digit.url}}{%endif%}
-    {{ product.price|mul:rate_select_currency }} {{disp_select_currency}}<br>
     <br><br>
     {%if rating_product%}
     <b><span id='rating'>Рейтинг товара: {{rating_product}}</span></b>
     {%else%}
-    <p><span id='rating'>Рейтинг отсутсвует. Никто не поставил оценку.</span></p>
+    <b><span id='rating'>Рейтинг отсутствует. Никто не поставил оценку.</span></b>
     {%endif%}
     {%if request.user.is_authenticated%}
         <div id='block_rating'>    
@@ -32,6 +33,15 @@
                 {%else%}
                     <button type="button" onclick="subeditprice('{{product.id}}', 'add')" id='btn_subeditprice'>Подписаться на изменение цены</button>
                 {%endif%}
+                {% if product.stock == 0 %}
+                    {% if is_sub_active_product %}
+                        <div>Мы сообщим, когда товар будет в наличии</div>
+                        <button type="button" onclick="subactivateproduct('{{product.id}}', 'del')" id='btn_subactivateproduct'>Не сообщать, когда товар будет в наличии.</button>
+                    {%else%}
+                        <button type="button" onclick="subactivateproduct('{{product.id}}', 'add')" id='btn_subactivateproduct'>Сообщить, когда товар будет в наличии.</button>
+                    {%endif%}
+                {%endif%}
+
 
             {%endif%}
         </div>
@@ -117,6 +127,30 @@
                 }
             });
     }
+        function subactivateproduct(id, type_act){
+            $.ajax({
+                type: 'POST', url: '{% url "subactivateproduct" %}',
+                data:{'csrfmiddlewaretoken':scrf_token, 'type':type_act, 'id':id,},
+                dataType: 'json',
+                cache: false,
+                success: function(data){
+                    if (data.success){
+                        var $item = $('<span class="msg">'+ data.success.msg +'</span>');
+                        if (type_act=='add'){
+                            $('#btn_subactivateproduct').attr('onclick', 'subactivateproduct({{product.id}}, "del")');
+                            $('#btn_subactivateproduct').text('Не сообщать, когда товар будет в наличии.');
+                        }
+                        else if(type_act=='del'){
+                            $('#btn_subactivateproduct').attr('onclick', 'subactivateproduct({{product.id}}, "add")');
+                            $('#btn_subactivateproduct').text('Сообщить, когда товар будет в наличии.');
+                        }
+                        $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                    }
+                }
+            });
+    }
     function edit_ratign(id){
         var rating = $('#rating_product').val();
         $.ajax({
@@ -133,7 +167,7 @@
                         if(data.new_avg){
                             $('#rating').text('Рейтинг товара: '+data.new_avg)
                         }else{
-                        $('#rating').text('Рейтинг отсутсвует. Никто не поставил оценку.')
+                        $('#rating').text('Рейтинг отсутствует. Никто не поставил оценку.')
                     }}
                 },
                 error: function(data){console.log(data);}

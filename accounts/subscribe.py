@@ -1,6 +1,6 @@
 from shop.settings import SITE_URL
 from accounts.models import *
-from product.models import *
+from product import models as models_shop
 import requests
 import json
 from dotenv import load_dotenv
@@ -73,15 +73,15 @@ def subscribe_promo(text_msg):
     
 def subscribe_get_file_in_order(id_user, id_order):
     try:
-        order = Order.objects.get(pk = id_order)
-        user = Subscribe.objects.get(user_id = id_user, is_get_digit_file = True)
-    except (Order.DoesNotExist, Subscribe.DoesNotExist):
+        order = models_shop.Order.objects.get(pk = id_order)
+        user = models_shop.Subscribe.objects.get(user_id = id_user, is_get_digit_file = True)
+    except (models_shop.Order.DoesNotExist, models_shop.Subscribe.DoesNotExist):
         return False
     all_files = order.orderitem_set.all()
     for item in all_files:
         try:
-            product = Product.objects.get(pk=item.id_good)
-        except Product.DoesNotExist:
+            product = models_shop.Product.objects.get(pk=item.id_good)
+        except models_shop.Product.DoesNotExist:
             return False
     
         if product.type_product == 'file':
@@ -95,3 +95,13 @@ def subscribe_edit_price(lst, name, new_price):
     for id_tg in lst:
         link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message[:200]}'
         req = requests.get(link)
+
+
+def subscribe_active_product(lst, product_name, price, items):
+    message = f'Товар "{product_name}" снова в наличии! Успей купить по цене {price}'
+    for id_tg in lst:
+        link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message[:200]}'
+        req = requests.get(link)
+        print(req.json())
+    all_items = models_shop.SubActivateProduct.objects.filter(pk__in = items)
+    all_items.delete()

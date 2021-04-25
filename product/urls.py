@@ -21,4 +21,5 @@ urlpatterns = [
     path('shop/rating_product/', rating_product, name='rating_product'),
     path('shop/wishlist/', wishlist, name = 'wishlist'),
     path('shop/subeditprice/', subeditprice, name = 'subeditprice'),
+    path('shop/subactivateproduct/', subactivateproduct, name = 'subactivateproduct'),
 ]

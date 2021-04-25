@@ -5,7 +5,7 @@ from django.urls import reverse
 from datetime import date
 import os
 from django.utils.crypto import get_random_string
-from accounts.subscribe import subscribe_edit_price
+from accounts.subscribe import subscribe_edit_price, subscribe_active_product
 
 class PriceMatrix(models.Model):
     name = models.CharField(max_length=200, default='Name matrix', verbose_name='Название')
@@ -28,43 +28,65 @@ class Product(models.Model):
     type_product = models.CharField(choices=[('material', 'Материальный'),('file', 'Файл'),],
         default='material', max_length=100, verbose_name='Тип товара')
     file_digit = models.FileField(default=None, blank=True, null=True, verbose_name='Файл (при тип товара - Файл)')
-    title = models.CharField(max_length=300, default='Noname')
-    stock = models.IntegerField(blank=True, default=0, null=True)
+    title = models.CharField(max_length=300, default='Noname', verbose_name='Название')
+    stock = models.IntegerField(blank=True, default=0, null=True, verbose_name='Остаток')
     brand = models.CharField(blank=True, null=True, max_length=150)
-    desc = models.TextField(blank=True, null=True, default='')
-    vendor_code = models.CharField(max_length=100, blank=True, null=True)
-    price = models.FloatField(default=0, blank=True, null=True)
-    old_price = models.FloatField(default=0, blank=True, null=True)
+    desc = models.TextField(blank=True, null=True, default='', verbose_name='Описание')
+    vendor_code = models.CharField(max_length=100, blank=True, null=True, verbose_name='Артикул')
+    price = models.FloatField(default=0, blank=True, null=True, verbose_name='Цена')
+    old_price = models.FloatField(default=0, blank=True, null=True, verbose_name='Старая цена')
     cid = models.ManyToManyField('Categories', related_name = 'category')
-    date_add = models.DateTimeField(auto_now_add=True)
+    date_add = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
     date_edit = models.DateTimeField(auto_now=True)
     photo = models.FileField(default=None, null=True, blank=True)
     is_recommend = models.BooleanField(default=False, verbose_name='Рекомендовать')
     rating = models.FloatField(null=True, verbose_name='Рейтинг', blank=True)
+    is_active = models.BooleanField(default=True, verbose_name='Активный')
     
 
     def __str__(self):
         return self.title
 
     __origin_price = None
+    __origin_stock = None
+    __origin_is_active = None
 
     def __init__(self, *args, **kwargs):
         super(Product, self).__init__(*args, **kwargs)
         self.__origin_price = self.price
+        self.__origin_stock = self.stock
+        self.__origin_is_active = self.is_active
 
     def save(self, *args, **kwargs):
         self.price = round(self.price, 2)
         self.old_price = round(self.old_price, 2)
-        if self.__origin_price != self.price:
-            self.get_list_tg_sub_edit_price()
+        if self.__origin_price != self.price and self.is_active and not self.__origin_is_active:
+            self.get_list_tg_sub(type_sub='edit_price')
+        if self.__origin_stock == 0 and self.stock > 0 and self.is_active:
+            print(self.__origin_stock)
+            print(self.stock)
+            self.get_list_tg_sub(type_sub='active_product')
+
         super(Product, self).save(*args, **kwargs)
     
-    def get_list_tg_sub_edit_price(self):
+    def get_list_tg_sub(self, type_sub):
         lst = []
-        all_user = self.subeditprice_set.all()
+        items = []
+        if type_sub == 'edit_price':
+            all_user = self.subeditprice_set.all()
+        elif type_sub == 'active_product':
+            all_user = self.subactivateproduct_set.all()
+        else:
+            return
         for user_sub in all_user:
             lst.append(user_sub.user.id_tg)
-        subscribe_edit_price(lst, self.title, self.price)
+            items.append(user_sub.pk)
+        
+        if type_sub == 'edit_price':
+            subscribe_edit_price(lst, self.title, self.price)
+        elif type_sub == 'active_product':
+            subscribe_active_product(lst, self.title, self.price, items)
+            
         
 
     def delete(self):

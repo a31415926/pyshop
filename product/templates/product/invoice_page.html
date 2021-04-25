@@ -15,7 +15,7 @@
     
             {%for good in goods%}
             <tr>
-            <td><a href="{% url 'product_page' good.id_good %}" target="_blank">{{good.title_good}}</a></td>
+            <td><a href="{% url 'product_page' good.product.id %}" target="_blank">{{good.title_good}}</a></td>
             <td>{{good.cost|mul:order.rate_currency}}</td>
             <td>{{good.qty}}</td>
             <td></td>
