@@ -22,4 +22,6 @@ urlpatterns = [
     path('shop/wishlist/', wishlist, name = 'wishlist'),
     path('shop/subeditprice/', subeditprice, name = 'subeditprice'),
     path('shop/subactivateproduct/', subactivateproduct, name = 'subactivateproduct'),
+    path('shop/update_cities_np/', update_cities_np, name = 'update_cities_np'),
+    path('shop/update_warehouses_np/', update_warehouses_np, name = 'update_warehouses_np'),
 ]

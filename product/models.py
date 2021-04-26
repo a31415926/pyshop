@@ -437,4 +437,24 @@ class RatingProduct(models.Model):
         self.product.save()
 
 
+class DeliveryCitiesNP(models.Model):
 
+    city = models.CharField(max_length=150, blank=True, null=True)
+    city_ua = models.CharField(max_length=150, blank=True, null=True)
+    region = models.CharField(max_length=200, blank=True, null=True)
+    region_ua = models.CharField(max_length=200, blank=True, null=True)
+    city_ref = models.CharField(max_length=50, blank=True, null=True)
+    cityID = models.IntegerField(default=0)
+
+
+
+class DeliveryWarehousesNP(models.Model):
+    city = models.ForeignKey(DeliveryCitiesNP, on_delete=models.CASCADE)
+    sitekey = models.IntegerField(default=0)
+    description = models.CharField(max_length=250, blank=True, default='')
+    description_ru = models.CharField(max_length=250, blank=True, default='')
+    short_address = models.CharField(max_length=250, blank=True, default='')
+    short_address_ru = models.CharField(max_length=250, blank=True, default='')
+    ref_warehouse = models.CharField(max_length=250, blank=True, default='')
+    number_warehouse = models.IntegerField(default=0)
+    

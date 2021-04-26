@@ -67,6 +67,7 @@ class Basket:
 class OrderServise:
     def filter_order(data):
         filter_order = {}
+        date_default = {}
         if data.get('min_amount'):
             filter_order['total_amount__gte'] = data.get('min_amount') 
         if data.get('max_amount'):
@@ -76,11 +77,13 @@ class OrderServise:
             date_start = data.get('date_start').split('-')
             date_start = list(map(int, date_start))
             filter_order['date_create__gte'] = datetime.date(*date_start)
+            filter_order['date_start'] = data.get('date_start')
         if data.get('date_end'):
             date_default['date_end'] = data.get('date_end')
             date_end = data.get('date_end').split('-')
             date_end = list(map(int, date_end))
             filter_order['date_create__lte'] = datetime.date(*date_end)
+            filter_order['date_end'] = data.get('date_end')
         if data.get('status'):
             filter_order['status'] = data.get('status')
         
