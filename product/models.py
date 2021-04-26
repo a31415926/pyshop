@@ -60,7 +60,7 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         self.price = round(self.price, 2)
         self.old_price = round(self.old_price, 2)
-        if self.__origin_price != self.price and self.is_active and not self.__origin_is_active:
+        if self.__origin_price != self.price and self.is_active and self.__origin_is_active:
             self.get_list_tg_sub(type_sub='edit_price')
         if self.__origin_stock == 0 and self.stock > 0 and self.is_active:
             print(self.__origin_stock)
@@ -88,13 +88,6 @@ class Product(models.Model):
             subscribe_active_product(lst, self.title, self.price, items)
             
         
-
-    def delete(self):
-        print('delete')
-        self.photo.delete()
-        super(Product, self).delete()
-
-    
     def product_rating(self):
         rating = self.rating_product.values('value_rating').aggregate(rating=models.Avg('value_rating'))
         return rating.get('rating')
@@ -437,4 +430,24 @@ class RatingProduct(models.Model):
         self.product.save()
 
 
+class DeliveryCitiesNP(models.Model):
 
+    city = models.CharField(max_length=150, blank=True, null=True)
+    city_ua = models.CharField(max_length=150, blank=True, null=True)
+    region = models.CharField(max_length=200, blank=True, null=True)
+    region_ua = models.CharField(max_length=200, blank=True, null=True)
+    city_ref = models.CharField(max_length=50, blank=True, null=True)
+    cityID = models.IntegerField(default=0)
+
+
+
+class DeliveryWarehousesNP(models.Model):
+    city = models.ForeignKey(DeliveryCitiesNP, on_delete=models.CASCADE)
+    sitekey = models.IntegerField(default=0)
+    description = models.CharField(max_length=250, blank=True, default='')
+    description_ru = models.CharField(max_length=250, blank=True, default='')
+    short_address = models.CharField(max_length=250, blank=True, default='')
+    short_address_ru = models.CharField(max_length=250, blank=True, default='')
+    ref_warehouse = models.CharField(max_length=250, blank=True, default='')
+    number_warehouse = models.IntegerField(default=0)
+    

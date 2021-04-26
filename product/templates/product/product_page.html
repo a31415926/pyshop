@@ -29,7 +29,7 @@
                 {%endif%}
                 {% if is_sub_edit_price %}
                     <div>Вы подписаны на изменение цены</div>
-                    <button type="button" onclick="subeditprice('{{product.id}}', 'del')" id='btn_subeditprice'>Подписаться</button>
+                    <button type="button" onclick="subeditprice('{{product.id}}', 'del')" id='btn_subeditprice'>Отписаться</button>
                 {%else%}
                     <button type="button" onclick="subeditprice('{{product.id}}', 'add')" id='btn_subeditprice'>Подписаться на изменение цены</button>
                 {%endif%}

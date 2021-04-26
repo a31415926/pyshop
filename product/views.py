@@ -9,7 +9,10 @@ import json
 import requests
 from accounts import subscribe
 import datetime
+from dotenv import load_dotenv
 from product import convert_html
+load_dotenv()
+import os
 
 
 def shop_main_page(request):
@@ -164,12 +167,15 @@ def all_invoices(request):
         data = request.POST
         if data.get('filter'):
             filter_order = services.OrderServise.filter_order(data)
-
+    context['filter'] = filter_order
+    date_default = {
+        'date_start':filter_order.pop('date_start', ''),
+        'date_end':filter_order.pop('date_end', ''),
+    }
     all_invoices = Order.objects.filter(**filter_order).order_by('-pk')
     all_status = forms.ChangeStatusOrder()
     context['all_invoices'] = all_invoices
     context['all_status'] = all_status
-    context['filter'] = filter_order
     context['filter'].update(date_default)
     return render(request, template, context=context)
 
@@ -469,3 +475,87 @@ def rating_product(request):
         except Product.DoesNotExist:
             data_response['error'] = 'Некорректные параметры'
     return HttpResponse(json.dumps(data_response), content_type='application/json')
+
+
+
+def update_cities_np(request):
+    #побереги базу!!!!!! ретурн не удалять просто так.
+    return HttpResponse(json.dumps({}), content_type='application/json')
+    link = 'https://api.novaposhta.ua/v2.0/json/'
+    headers = {'Content-Type':'application/json',}
+    """
+    data = (
+        '{"modelName": "InternetDocument",'
+        '"calledMethod": "getDocumentPrice",'
+        '"methodProperties": {'
+        '"CitySender": "ae14ae5b-b77a-11e9-8c22-005056b24375",'
+        '"CityRecipient": "69da4160-3f5d-11de-b509-001d92f78698",'
+        '"Weight": "10",'
+        '"ServiceType": "WarehouseWarehouse",'
+        '"Cost": "100",'
+        '"CargoType": "Cargo",'
+        '"SeatsAmount": "1",'
+        '"OptionsSeat": [{"weight": 25,'
+        '"volumetricWidth": 30,'
+        '"volumetricLength": 30,'
+        '"volumetricHeight": 30}]},'
+        f'"apiKey": {os.environ.get("TOKEN_NP")}}'
+    )"""
+    data = (
+        '{"modelName": "Address",'
+        '"calledMethod": "getCities",'
+        f'"apiKey": {os.environ.get("TOKEN_NP")}}'
+    )
+    req = requests.post(link, data=data, headers=headers)
+    responce = req.json()
+    if responce.get('success'):
+        for item in responce['data']:
+            city_ua = item['Description']
+            data_city = {
+                'city':item['DescriptionRu'],
+                'city_ref':item['Ref'],
+                'cityID':item['CityID'],
+                'region_ua':item['AreaDescription'],
+                'region':item['AreaDescriptionRu'],
+            }
+            DeliveryCitiesNP.objects.update_or_create(city_ua=city_ua, defaults=data_city)
+            #return HttpResponse(json.dumps(asd), content_type='application/json')
+    return HttpResponse(json.dumps(responce), content_type='application/json')
+
+
+
+def update_warehouses_np(request):
+    link = 'https://api.novaposhta.ua/v2.0/json/'
+    data = (
+        '{"modelName": "AddressGeneral",'
+        '"calledMethod": "getWarehouses",'
+        '"methodProperties": {"Language": "ru"},'
+        f'"apiKey": {os.environ.get("TOKEN_NP")}}'
+    )
+    headers = {'Content-Type':'application/json',}
+    req = requests.post(link, data=data, headers=headers)
+    responce = req.json()
+    if responce.get('success'):
+        for item in responce['data']:
+            try:
+                city = DeliveryCitiesNP.objects.get(city_ref=item.get('CityRef'))
+            except:
+                print(item)
+                continue
+            item_ref =item.get('Ref')
+            data_warehouse = {
+                'city':city,
+                'sitekey':item.get('SiteKey'),
+                'description':item.get('Description'),
+                'description_ru':item.get('DescriptionRu'),
+                'short_address':item.get('ShortAddress'),
+                'short_address_ru':item.get('ShortAddressRu'),
+                'number_warehouse':item.get('Number'),
+            }
+            DeliveryWarehousesNP.objects.update_or_create(
+                ref_warehouse=item_ref,
+                defaults = data_warehouse
+            )
+            
+    return HttpResponse(json.dumps(responce), content_type='application/json')
+
