@@ -477,30 +477,43 @@ def rating_product(request):
     return HttpResponse(json.dumps(data_response), content_type='application/json')
 
 
+def calc_delivery(request):
+    data_response = {}
+    basket = services.Basket.get_basket(request.user.id) if request.user.is_authenticated else request.session.get('basket', {})
+    
+    if request.method == 'POST':
+        data = request.POST
+        total_cost = sum([i['qty'] * i['price'] for i in basket.values()])
+        if data.get('delivery_id'):
+            data_response = services.DeliveryFunc.calc_cost_of_delivery(data.get('delivery_id'), total_cost)
+            if not data_response.get('cost') and data_response.get('cost') != 0:
+                if data_response:
+                    html_result = convert_html.delivery_np(data_response)
+                    if html_result:
+                        data_response['in_html'] = html_result
+        else:
+            if data.get('type_d') == 'novaposhta':
+                sel_val = data.get('ref') if data.get('ref') else data.get('sel_val')
+                all_values = services.DeliveryFunc.novaposhta(data.get('type_v'), sel_val, total_cost, data.get('sel_val'))
+                if not all_values.get('cost'):
+                    html_result = convert_html.delivery_np(all_values)
+                    if html_result:
+                        data_response['in_html'] = html_result
+                else:
+                    data_response = all_values
+
+        #стоимость переводим в курс
+        if data_response.get('cost'):
+            cost_in_curr = data_response.get("cost") * request.session["rate_curr"]
+            data_response['cost'] = f'{cost_in_curr} {request.session["disp_curr"]}'
+
+    return HttpResponse(json.dumps(data_response), content_type='application/json')
+
+
 
 def update_cities_np(request):
-    #побереги базу!!!!!! ретурн не удалять просто так.
-    return HttpResponse(json.dumps({}), content_type='application/json')
     link = 'https://api.novaposhta.ua/v2.0/json/'
     headers = {'Content-Type':'application/json',}
-    """
-    data = (
-        '{"modelName": "InternetDocument",'
-        '"calledMethod": "getDocumentPrice",'
-        '"methodProperties": {'
-        '"CitySender": "ae14ae5b-b77a-11e9-8c22-005056b24375",'
-        '"CityRecipient": "69da4160-3f5d-11de-b509-001d92f78698",'
-        '"Weight": "10",'
-        '"ServiceType": "WarehouseWarehouse",'
-        '"Cost": "100",'
-        '"CargoType": "Cargo",'
-        '"SeatsAmount": "1",'
-        '"OptionsSeat": [{"weight": 25,'
-        '"volumetricWidth": 30,'
-        '"volumetricLength": 30,'
-        '"volumetricHeight": 30}]},'
-        f'"apiKey": {os.environ.get("TOKEN_NP")}}'
-    )"""
     data = (
         '{"modelName": "Address",'
         '"calledMethod": "getCities",'
@@ -519,7 +532,6 @@ def update_cities_np(request):
                 'region':item['AreaDescriptionRu'],
             }
             DeliveryCitiesNP.objects.update_or_create(city_ua=city_ua, defaults=data_city)
-            #return HttpResponse(json.dumps(asd), content_type='application/json')
     return HttpResponse(json.dumps(responce), content_type='application/json')
 
 

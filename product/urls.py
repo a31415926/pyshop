@@ -8,6 +8,7 @@ urlpatterns = [
     path('shop/category/<int:pk>/', category_page, name='category_page'),
     path('shop/currency', select_curr, name='category_page'),
     path('shop/change_invoice/', change_invoice, name='change_invoice'),
+    path('shop/calc_delivery/', calc_delivery, name='calc_delivery'),
     path('shop/checkout/', checkout_page, name='checkout_page'),
     path('shop/create_promocode/', create_promocode, name='create_promocode_page'),
     path('shop/edit_price_in_category/', edit_price_in_category, name='edit_price_in_category'),

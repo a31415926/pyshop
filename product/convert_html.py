@@ -53,3 +53,19 @@ def select_rating_product(id, select_rating):
     html_result += '</select>'
     html_result+=f'<button onclick="edit_ratign({id})">Проголосовать</button>'
     return html_result
+
+
+def delivery_np(data):
+    html_result = ''
+    html_result=f'<br><span class=\'desc_info\'><select id=\'delivery_novaposhta\' class = \'{data.get("type")}_delivery\'>'
+    for i in data['select']:
+        html_result += f'<option value="{i}">{i}</option>'
+    html_result += '</select>'
+    if data.get('type') == 'region_novaposhta':
+        html_result+=f'<button type=\'button\' class = \'{data.get("type")}_delivery\' onclick="select_delivery(\'region\', \'novaposhta\')">Выбрать</button></span>'
+    if data.get('type') == 'city_novaposhta':
+        html_result+=f'<button type=\'button\' class = \'{data.get("type")}_delivery\' onclick="select_delivery(\'city\', \'novaposhta\')">Выбрать</button></span>'
+    if data.get('type') == 'warehouses_novaposhta':
+        html_result+=f'<button type=\'button\' class = \'{data.get("type")}_delivery\' onclick="select_delivery(\'warehouses\', \'novaposhta\', \'{data.get("ref")}\')">Выбрать</button></span>'
+
+    return html_result

@@ -24,20 +24,24 @@
         {% endfor %}
     </tbody>
   </table>
-  <form action="" method="POST">
+  <form action="" method="POST" class='order_info_form'>
     {%csrf_token%}
 
   {% for delivery in all_delivery%}
     <input type="radio" name = 'delivery' value="{{delivery.id}}" id="">
     <b>{{delivery.name}}</b>
-    {{delivery.description}}
+    <span id='desc_del_{{delivery.id}}'>{{delivery.description}}
+    <span class='desc_info'></span>
+    </span>
     <br>
   {%endfor%}
   PROMO:  <input type="text" name ='promo_code' id='promo_code'><button type="button" onclick="is_promo()" id="btn_promo">Проверить</button><br>
+  <input type='hidden' id ='delivery_department' name="delivery_department" value=''>
   <button type="submit">Оформить</button>
   </form>
   <div id="sum_info">
     <p>Общая стоимость: {{total_cost|mul:rate_select_currency |floatformat:2 }} {{disp_select_currency}}</p>
+    <p><span class = 'cost_delivery'></span></p>
   </div>
   <script>document.getElementsByName("delivery")[0].checked = true;</script>
   <script>
@@ -54,6 +58,41 @@
                 }
             }
         });
+  }
+  function select_delivery (type_v, type_d, ref = undefined){
+    if (type_d == 'novaposhta'){
+      if (type_v == 'city'){
+        $('.warehouses_novaposhta_delivery').remove();
+      }
+      else if (type_v == 'region'){
+        $('.city_novaposhta_delivery').remove();
+
+      }
+
+    }
+    $.ajax({
+        type:'POST', url: '{% url "calc_delivery" %}',
+        data:{'csrfmiddlewaretoken':scrf_token, 'sel_val':$('.'+type_v+'_'+type_d+'_delivery').val(), 'type_d':type_d, 'type_v':type_v, 'ref':ref},
+        dataType: 'json',
+        cache: false,
+        success: function(data){
+          console.log('data.cost')
+          console.log(data.cost)
+          if(data.in_html){
+              console.log(this.value)
+              $('#desc_del_'+id_delivery).append(data.in_html)
+            }
+            
+            else if(data.cost || data.cost == 0){
+              console.log(data.cost)
+              $('#delivery_department').val(data.war_ref)
+              $('.cost_delivery').html('Стоимость доставки '+data.cost)
+            } 
+        },
+        error: function(data){
+          console.log(data)
+        }
+      })
   }
     function is_promo(){
       $.ajax({
@@ -74,5 +113,25 @@
         }
       })
     }
+    $('input[name=delivery]').change(function(){
+      $('.desc_info').remove();
+      id_delivery = this.value
+      $.ajax({
+        type:'POST', url: '{% url "calc_delivery" %}',
+        data:{'csrfmiddlewaretoken':scrf_token, 'delivery_id':id_delivery,},
+        dataType: 'json',
+        cache: false,
+        success: function(data){
+            if(data.in_html){
+              console.log(this.value)
+              $('#desc_del_'+id_delivery).append(data.in_html)
+            }
+            else if(data.cost || data.cost == 0){
+              $('.cost_delivery').html('Стоимость доставки '+data.cost)
+            }
+        }
+      })
+    })
+
 </script>
   {% endblock %}

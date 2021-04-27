@@ -6,7 +6,7 @@ class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = ['user', 'currency', 'rate_currency',
-        'promo', 'delivery_method',]
+        'promo', 'delivery_method', 'delivery_department',]
 
 
 class ChangeStatusOrder(forms.ModelForm):

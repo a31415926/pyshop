@@ -3,6 +3,9 @@ from accounts.models import CustomUser
 from django.db.models.signals import post_delete
 from django.urls import reverse
 from datetime import date
+from dotenv import load_dotenv
+load_dotenv()
+import requests
 import os
 from django.utils.crypto import get_random_string
 from accounts.subscribe import subscribe_edit_price, subscribe_active_product
@@ -63,8 +66,6 @@ class Product(models.Model):
         if self.__origin_price != self.price and self.is_active and self.__origin_is_active:
             self.get_list_tg_sub(type_sub='edit_price')
         if self.__origin_stock == 0 and self.stock > 0 and self.is_active:
-            print(self.__origin_stock)
-            print(self.stock)
             self.get_list_tg_sub(type_sub='active_product')
 
         super(Product, self).save(*args, **kwargs)
@@ -122,7 +123,14 @@ class Currency(models.Model):
 
 
 class Delivery(models.Model):
+
+    type_choices = [
+        ('normal', 'Обычный'),
+        ('np', 'NovaPoshta'),
+    ]
+
     name = models.CharField(max_length=350, default='Delivery')
+    type_delivery = models.CharField(default='normal', choices=type_choices, max_length=50, verbose_name='Тип (для сторонних интеграций)')
     description = models.TextField(blank=True, null=True)
     matrix = models.ForeignKey(PriceMatrix, blank=True, null=True, default=None, on_delete=models.PROTECT)
 
@@ -130,10 +138,30 @@ class Delivery(models.Model):
         return self.name
 
 
+
+    ##### похоже от этого избавился, перепроверить и удалить.
     @classmethod
     def calc_cost_of_delivery(cls, id_delivery, total_amount):
         delivery = cls.objects.get(pk=id_delivery)
         delivery_matrix = delivery.matrix
+        if not delivery_matrix:
+            return 0
+        items = delivery_matrix.pricematrixitem_set.all()
+        cost_of_delivery = 0
+        for item in items:
+            if item.min_value <= total_amount < item.max_value:
+                if item.type_item =='fixed':
+                    cost_of_delivery = item.value
+                    break
+                elif item.type_item == 'relative':
+                    cost_of_delivery = total_amount /100 * item.value
+                    break
+
+        cost_of_delivery = round(cost_of_delivery, 2)
+        return cost_of_delivery
+
+    def calculate_cost_of_delivery(self, total_amount):
+        delivery_matrix = self.matrix
         if not delivery_matrix:
             return 0
         items = delivery_matrix.pricematrixitem_set.all()
@@ -190,7 +218,7 @@ class Promocode(models.Model):
             return False
         return False
     
-
+    #### похоже тоже ненужное. проверить еще раз и удалить
     @classmethod
     def get_discount(cls, total_sum, promocode):
         promo = cls.objects.get(code=promocode)
@@ -249,6 +277,7 @@ class Order(models.Model):
     delivery_method = models.ForeignKey(Delivery, null=True, blank=True, on_delete=models.PROTECT, verbose_name='Способ доставки')
     cost_of_delivery = models.FloatField(default=0, verbose_name='Стоимость доставки')
     is_paid = models.BooleanField(default=False, verbose_name='Было ли списание средств.')
+    delivery_department = models.CharField(null=True, blank=True, verbose_name='Информация об адресе доставки.', max_length=400)
 
 
     class Meta:
@@ -286,7 +315,7 @@ class Order(models.Model):
         self.save()
         return True
 
-
+    #убрать классметод и во вьюшке переписать
     @classmethod
     def change_status(cls, id_order, new_status):
         obj = cls.objects.get(pk = id_order)
@@ -297,11 +326,20 @@ class Order(models.Model):
         order_item = self.orderitem_set.all()
         self.full_amount = order_item.get_total_amount()
         promo = self.promo.get_sum_discount(self.full_amount) if self.promo else 0
-        self.cost_of_delivery = Delivery.calc_cost_of_delivery(self.delivery_method.id, self.full_amount + promo)
+        print(self.delivery_method)
+        if self.delivery_method.type_delivery == 'normal':
+            cost_of_delivery = self.delivery_method.calculate_cost_of_delivery(self.full_amount + promo)
+            #Delivery.calc_cost_of_delivery(self.delivery_method.id, self.full_amount + promo)
+        elif self.delivery_method.type_delivery == 'np':
+            try:
+                war_np = DeliveryWarehousesNP.objects.get(ref_warehouse=self.delivery_department)
+                city_info = war_np.city
+                ref_city = city_info.city_ref
+                cost_of_delivery = city_info.calc_cost_of_delivery(self.full_amount + promo)
+            except DeliveryWarehousesNP.DoesNotExist:
+                cost_of_delivery = 0
+        self.cost_of_delivery = cost_of_delivery 
         self.total_amount = self.full_amount + promo + self.cost_of_delivery
-        self.cost_of_delivery_on_curr = self.cost_of_delivery * self.rate_currency
-        self.total_amount_on_curr = self.total_amount * self.rate_currency
-        self.full_amount_on_curr = self.full_amount * self.rate_currency
         self.save()
 
 
@@ -332,7 +370,6 @@ class OrderItem(models.Model):
 
     @classmethod
     def add_item(cls, data):
-        print(data)
         if data.get('pk'):
             try:
                 obj = cls.objects.get(pk = data.get('pk'))
@@ -439,6 +476,34 @@ class DeliveryCitiesNP(models.Model):
     city_ref = models.CharField(max_length=50, blank=True, null=True)
     cityID = models.IntegerField(default=0)
 
+    def calc_cost_of_delivery(self, total_amount):
+        link = 'https://api.novaposhta.ua/v2.0/json/'
+        headers = {'Content-Type':'application/json',}
+        
+        data = (
+            '{"modelName": "InternetDocument",'
+            '"calledMethod": "getDocumentPrice",'
+            '"methodProperties": {'
+            '"CitySender": "ae14ae5b-b77a-11e9-8c22-005056b24375",'
+            f'"CityRecipient": "{self.city_ref}",'
+            '"Weight": "10",'
+            '"ServiceType": "WarehouseWarehouse",'
+            f'"Cost": "{total_amount}",'
+            '"CargoType": "Cargo",'
+            '"SeatsAmount": "1",'
+            '"OptionsSeat": [{"weight": 10,'
+            '"volumetricWidth": 30,'
+            '"volumetricLength": 30,'
+            '"volumetricHeight": 30}]},'
+            f'"apiKey": "{os.environ.get("TOKEN_NP")}"}}'
+        )
+        
+        req = requests.post(link, data=data, headers=headers)
+        responce = req.json()
+        if responce['success']:
+            return responce['data'][0]['Cost']
+        else:
+            return False
 
 
 class DeliveryWarehousesNP(models.Model):

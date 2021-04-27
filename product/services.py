@@ -348,3 +348,50 @@ class ImportSheet:
         html_result += '</tbody></table>'
 
         return html_result
+
+
+class DeliveryFunc:
+
+    def calc_cost_of_delivery(id_delivery, total_amount):
+        try:
+            delivery = Delivery.objects.get(pk=id_delivery)
+        except Delivery.DoesNotExist:
+            return {}
+
+        if delivery.type_delivery == 'normal':
+            cost = delivery.calculate_cost_of_delivery(total_amount)
+            return {'cost':cost}
+        elif delivery.type_delivery == 'np':
+            return DeliveryFunc.novaposhta()
+
+    
+    def novaposhta(type_find = False, present_val = False, total_amount = False, warehouses = None):
+        if not type_find:
+            all_regions = list(DeliveryCitiesNP.objects.all().values_list('region', flat=True).distinct())
+            return {'select':sorted(all_regions), 'type':'region_novaposhta'}
+        elif type_find == 'region':
+            all_cities = DeliveryCitiesNP.objects.values_list('city', flat=True).filter(region = present_val)
+            return {'select':sorted(all_cities), 'type':'city_novaposhta'}
+        elif type_find == 'city':
+            try:
+                city = DeliveryCitiesNP.objects.get(city=present_val)
+                all_warehouses =city.deliverywarehousesnp_set.values_list('description_ru', flat=True)
+                return {'select':all_warehouses, 'type':'warehouses_novaposhta', 'ref':city.city_ref}
+            except DeliveryWarehousesNP.DoesNotExist:
+                return {}
+        elif type_find == 'warehouses':
+            try:
+                city = DeliveryCitiesNP.objects.get(city_ref=present_val)
+                cost = city.calc_cost_of_delivery(total_amount)
+                print(warehouses)
+                war_val = city.deliverywarehousesnp_set.values('ref_warehouse').filter(description_ru = warehouses)
+                if war_val:
+                    is_warehouses = war_val[0]['ref_warehouse']
+                else:
+                    is_warehouses = False
+                return {'cost':cost, 'war_ref':is_warehouses}
+            except DeliveryCitiesNP.DoesNotExist:
+                return {}
+
+
+        
