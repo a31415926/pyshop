@@ -71,23 +71,37 @@ def subscribe_promo(text_msg):
         print(req.json())
     
     
-def subscribe_get_file_in_order(id_user, id_order):
+def subscribe_get_file_in_order(id_order):
     try:
         order = models_shop.Order.objects.get(pk = id_order)
-        user = models_shop.Subscribe.objects.get(user_id = id_user, is_get_digit_file = True)
-    except (models_shop.Order.DoesNotExist, models_shop.Subscribe.DoesNotExist):
+        user = Subscribe.objects.get(user_id = order.user, is_get_digit_file = True)
+    except (models_shop.Order.DoesNotExist, Subscribe.DoesNotExist):
         return False
     all_files = order.orderitem_set.all()
     for item in all_files:
         try:
-            product = models_shop.Product.objects.get(pk=item.id_good)
+            product = models_shop.Product.objects.get(pk=item.product.id)
         except models_shop.Product.DoesNotExist:
             return False
     
         if product.type_product == 'file':
-            files = {'document':(product.file_digit.name, product.file_digit)}
-            link = f'https://api.telegram.org/bot{TG_TOKEN}/sendDocument?chat_id=456008920&parse_mode=HTML'
-            req = requests.post(link, files = files)
+            token_file = product.filetelegram_set.all()
+            file_id = ''
+            link = f'https://api.telegram.org/bot{TG_TOKEN}/sendDocument?chat_id={user.user.id_tg}&parse_mode=HTML'
+            if token_file:
+                file_id = token_file.first().id_file
+                files = {'document':file_id}
+                req = requests.post(link, data=files)
+            else:
+                files = {'document':(product.file_digit.name, product.file_digit)}
+                req = requests.post(link, files = files)
+                if req.status_code == 200:
+                    new_token = req.json()
+                    new_token = new_token['result']['document']['file_id']
+                    models_shop.FileTelegram.objects.update_or_create(
+                        product = product,
+                        defaults = {'id_file':new_token}
+                    )
 
 
 def subscribe_edit_price(lst, name, new_price):

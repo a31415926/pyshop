@@ -8,7 +8,7 @@ load_dotenv()
 import requests
 import os
 from django.utils.crypto import get_random_string
-from accounts.subscribe import subscribe_edit_price, subscribe_active_product
+from accounts.subscribe import subscribe_edit_price, subscribe_active_product, subscribe_get_file_in_order
 
 class PriceMatrix(models.Model):
     name = models.CharField(max_length=200, default='Name matrix', verbose_name='Название')
@@ -53,12 +53,14 @@ class Product(models.Model):
     __origin_price = None
     __origin_stock = None
     __origin_is_active = None
+    __origin_file_digit = None
 
     def __init__(self, *args, **kwargs):
         super(Product, self).__init__(*args, **kwargs)
         self.__origin_price = self.price
         self.__origin_stock = self.stock
         self.__origin_is_active = self.is_active
+        self.__origin_file_digit = self.file_digit
 
     def save(self, *args, **kwargs):
         self.price = round(self.price, 2)
@@ -67,7 +69,9 @@ class Product(models.Model):
             self.get_list_tg_sub(type_sub='edit_price')
         if self.__origin_stock == 0 and self.stock > 0 and self.is_active:
             self.get_list_tg_sub(type_sub='active_product')
-
+        if self.__origin_file_digit != self.file_digit:
+            print(self.filetelegram_set.all())
+            print(self.filetelegram_set.all().delete())
         super(Product, self).save(*args, **kwargs)
     
     def get_list_tg_sub(self, type_sub):
@@ -303,6 +307,7 @@ class Order(models.Model):
             self.user.balance = self.user.balance - self.total_amount
             self.user.save()
             self.save()
+            subscribe_get_file_in_order(self.pk)
             return True
         return False
 
