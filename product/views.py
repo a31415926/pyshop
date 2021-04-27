@@ -517,7 +517,7 @@ def update_cities_np(request):
     data = (
         '{"modelName": "Address",'
         '"calledMethod": "getCities",'
-        f'"apiKey": {os.environ.get("TOKEN_NP")} }}'
+        f'"apiKey": "{os.environ.get("TOKEN_NP")}", }}'
     )
     req = requests.post(link, data=data, headers=headers)
     responce = req.json()
@@ -542,7 +542,7 @@ def update_warehouses_np(request):
         '{"modelName": "AddressGeneral",'
         '"calledMethod": "getWarehouses",'
         '"methodProperties": {"Language": "ru"},'
-        f'"apiKey": {os.environ.get("TOKEN_NP")}}}'
+        f'"apiKey": "{os.environ.get("TOKEN_NP")}",}}'
     )
     headers = {'Content-Type':'application/json',}
     req = requests.post(link, data=data, headers=headers)
