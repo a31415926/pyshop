@@ -48,15 +48,21 @@
     </form>
 
     {%if viewed_products %}
-    <br><br><br><br><br><h2>Просмотренные товары:</h2>
+    <br><br><h2>Просмотренные товары:</h2>
     <div class="card-group">
     {{viewed_products|safe}}
     </div>
     {%endif%}
     {%if recommend_pr %}
-    <br><br><br><br><br><h2>Похожие товары:</h2>
+    <br><br><h2>Похожие товары:</h2>
     <div class="card-group">
     {{recommend_pr|safe}}
+    </div>
+    {%endif%}
+    {%if buy_together %}
+    <br><br><h2>Покупают вместе</h2>
+    <div class="card-group">
+    {{buy_together|safe}}
     </div>
     {%endif%}
 

@@ -43,6 +43,19 @@ def recommend_products(data):
     return responce_html
 
 
+def buy_together(data):
+    responce_html = ''
+    for i in data:
+        responce_html += (
+            f'<div class="card" style="width: 18rem;">'
+            f'<div class="card-body">'
+            f'<h5 class="card-title">{i["product__title"]}</h5>'
+            f'<p class="card-text">Купили вместе {i["all_qty"]} раз</p>'
+            f'<a href="/shop/product/{i["product"]}" class="btn btn-primary">open page</a></div></div>'
+        )
+    return responce_html
+
+
 def select_rating_product(id, select_rating):
     html_result = ''
     html_result+=f'<select name="rating_product" id="rating_product">'

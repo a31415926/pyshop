@@ -168,22 +168,3 @@ REST_FRAMEWORK = {
 }
 
 TOKEN_EXPIRED_AFTER_SECONDS = 60*60*24*365*3
-
-
-REDIS_HOST = 'ec2-3-219-89-54.compute-1.amazonaws.com'
-REDIS_PORT = '13930'
-REDIS_PASSWORD = 'p2c0e31f4a33aec78be54585e34dd6f537b536b075e42f38aa42d341bec238a0f'
-CELERY_BROKER_URL = 'redis://:p2c0e31f4a33aec78be54585e34dd6f537b536b075e42f38aa42d341bec238a0f@ec2-3-219-89-54.compute-1.amazonaws.com:13930'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600} 
-CELERY_RESULT_BACKEND = 'redis://:p2c0e31f4a33aec78be54585e34dd6f537b536b075e42f38aa42d341bec238a0f@ec2-3-219-89-54.compute-1.amazonaws.com:13930'
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get('REDIS_URL'),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}

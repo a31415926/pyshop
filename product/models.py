@@ -371,7 +371,9 @@ class OrderItem(models.Model):
 
 
     objects = OrderItemManager()
-
+    
+    def product_title(self):
+        return product.title
 
     @classmethod
     def add_item(cls, data):

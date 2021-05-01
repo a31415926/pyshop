@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from product import convert_html
 load_dotenv()
 import os
-
+from django.db.models import Sum
 
 def shop_main_page(request):
     categories = Categories.objects.all()
@@ -61,7 +61,19 @@ def product_page(request, pk):
         select_rating = product.select_rating(user=request.user)
         context['select_rating']=convert_html.select_rating_product(product.id, select_rating)
     context['recommend_pr'] = convert_html.recommend_products(recommend_products)
-
+    
+    ### кусок гкода для блока "с этим товаром так же покупают". я понимаю, что это гкод и мне стыдно за него
+    ### но оно работает))))
+    all_item = OrderItem.objects.filter(product = product) 
+    lst_all_order = []
+    for i in all_item:
+        lst_all_order.append(i.order)
+    
+    all_orderitem_with_product = OrderItem.objects.filter(order__in = lst_all_order).exclude(product=product)
+    buy_together = all_orderitem_with_product.values(
+        'product', 'product__title'
+        ).annotate(all_qty = Sum('qty')).order_by('-all_qty')[:5]
+    context['buy_together'] = convert_html.buy_together(buy_together)
 
     return render(request, 'product/product_page.html', context)
 

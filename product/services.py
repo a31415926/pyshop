@@ -13,6 +13,9 @@ from googleapiclient.errors import HttpError
 import datetime
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
 
 
@@ -395,3 +398,65 @@ class DeliveryFunc:
 
 
         
+
+def update_w():
+    link = 'https://api.novaposhta.ua/v2.0/json/'
+    data = (
+        '{"modelName": "AddressGeneral",'
+        '"calledMethod": "getWarehouses",'
+        '"methodProperties": {"Language": "ru"},'
+        f'"apiKey": "{os.environ.get("TOKEN_NP")}"}}'
+    )
+    headers = {'Content-Type':'application/json',}
+    req = requests.post(link, data=data, headers=headers)
+    responce = req.json()
+    cnt = 0
+    if responce.get('success'):
+        for item in responce['data']:
+            cnt+=1
+            print(cnt)
+            try:
+                city = DeliveryCitiesNP.objects.get(city_ref=item.get('CityRef'))
+            except:
+                print(item)
+                continue
+            item_ref =item.get('Ref')
+            data_warehouse = {
+                'city':city,
+                'sitekey':item.get('SiteKey'),
+                'description':item.get('Description'),
+                'description_ru':item.get('DescriptionRu'),
+                'short_address':item.get('ShortAddress'),
+                'short_address_ru':item.get('ShortAddressRu'),
+                'number_warehouse':item.get('Number'),
+            }
+            DeliveryWarehousesNP.objects.update_or_create(
+                ref_warehouse=item_ref,
+                defaults = data_warehouse
+            )
+
+
+def update_c():
+    link = 'https://api.novaposhta.ua/v2.0/json/'
+    headers = {'Content-Type':'application/json',}
+    data = (
+        '{"modelName": "Address",'
+        '"calledMethod": "getCities",'
+        f'"apiKey": "{os.environ.get("TOKEN_NP")}"}}'
+    )
+    req = requests.post(link, data=data, headers=headers)
+    responce = req.json()
+    cnt = 0
+    if responce.get('success'):
+        for item in responce['data']:
+            cnt+=1
+            print(cnt)
+            city_ua = item['Description']
+            data_city = {
+                'city':item['DescriptionRu'],
+                'city_ref':item['Ref'],
+                'cityID':item['CityID'],
+                'region_ua':item['AreaDescription'],
+                'region':item['AreaDescriptionRu'],
+            }
+            DeliveryCitiesNP.objects.update_or_create(city_ua=city_ua, defaults=data_city)
