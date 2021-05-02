@@ -14,6 +14,8 @@ from product import convert_html
 load_dotenv()
 import os
 from django.db.models import Sum
+from product import parser_rozetka
+import re
 
 def shop_main_page(request):
     categories = Categories.objects.all()
@@ -583,3 +585,21 @@ def update_warehouses_np(request):
             
     return HttpResponse(json.dumps(responce), content_type='application/json')
 
+
+def parser_rozetka_view(request):
+    if request.method == 'GET':
+        template = 'product/parser_rozetka.html'
+        return render(request, template)
+
+    if request.method == 'POST':
+        responce = {}
+        data = request.POST
+        link = data.get('link')
+        search_category = re.search(r'rozetka.com.ua/.+/\D(\d+)/', link)
+        if not search_category:
+            responce = {'error':'Ссылка введена неверно.'}
+        else:
+            parser_rozetka.get_all_ids_goods(search_category[1])
+            responce = {'success':'Материалы украли))'}
+
+        return HttpResponse(json.dumps(responce), content_type='applicaion/json')
