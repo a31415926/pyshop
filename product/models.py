@@ -109,6 +109,19 @@ class Product(models.Model):
         except RatingProduct.DoesNotExist:
             return None
 
+    
+    def is_wishlist(self, user):
+        return self.wishlist_set.filter(user = user).exists()
+    
+
+    def add_to_wishlist(self, user):
+        return self.wishlist_set.create(user = user)
+
+    
+    def del_to_wishlist(self, user):
+        return self.wishlist_set.filter(user = user).delete()
+        
+
 
 
 class Categories(models.Model):
@@ -448,6 +461,15 @@ class Wishlist(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
+
+
+    def save(self, *args, **kwargs):
+        if Wishlist.objects.filter(user=self.user, product=self.product).exists():
+            return
+        else:
+            super(Wishlist, self).save(*args, **kwargs)
+
+
 
 
 class SubEditPrice(models.Model):

@@ -110,7 +110,7 @@ class ProductServices:
 
     def export_to_file(type_file):
         if type_file == 'csv':
-            with open('testss.csv', 'w', newline='',encoding='utf-8') as f:
+            with open('export.csv', 'w', newline='',encoding='utf-8') as f:
                 export_file = csv.DictWriter(f, fieldnames = [
                     'Название',
                     'Остаток',

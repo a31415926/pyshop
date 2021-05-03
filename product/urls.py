@@ -3,6 +3,7 @@ from product.views import *
 
 
 urlpatterns = [
+    path('all_links/', all_links, name='all_links'),
     path('shop/', shop_main_page, name='main_page'),
     path('shop/all/', all_product_page, name='all_product_page'),
     path('shop/basket/', basket, name='basket_page'),

@@ -19,6 +19,9 @@ import re
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  
 
 
+def all_links(request):
+    return render(request, 'product/all_links.html')
+
 
 def shop_main_page(request):
     categories = Categories.objects.all()
@@ -402,32 +405,21 @@ def wishlist(request):
         type_action = data.get('type')
         product = get_object_or_404(Product, pk = data.get('id'))
         if type_action == 'add':
-            item, create = Wishlist.objects.get_or_create(
-                user = request.user,
-                product = product,
-            )
-            if create:
+            if not product.is_wishlist(request.user):
+                product.add_to_wishlist(request.user)
                 data_response['success'] = {'msg':'Товар добавлен в список желаний'}
             else:
                 data_response['error'] = {'msg':'Товар уже в списке желаний'}
         elif type_action == 'del':
-            try:
-                Wishlist.objects.get(
-                    user = request.user, 
-                    product = product,
-                ).delete()
+            if product.del_to_wishlist(request.user):
                 data_response['success'] = {'msg':'Товар удален из списка желаний'}
-            except Wishlist.DoesNotExist:
+            else:
                 data_response['error'] = {'msg':'Товар не найден в списке желаний'}
         elif type_action=='del_for_wishlist':
-            try:
-                Wishlist.objects.get(
-                    user = request.user, 
-                    product = product,
-                ).delete()
+            if product.del_to_wishlist(request.user):            
                 wishlist = Wishlist.objects.filter(user = request.user)
                 data_response['success'] = convert_html.my_wishlist(wishlist)
-            except Wishlist.DoesNotExist:
+            else:
                 data_response['error'] = {'msg':'Товар не найден в списке желаний'}
         return HttpResponse(json.dumps(data_response), content_type = 'application/json')
 
