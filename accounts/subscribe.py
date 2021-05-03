@@ -6,6 +6,7 @@ import json
 from dotenv import load_dotenv
 load_dotenv()
 import os
+import re
 
 
 TG_TOKEN = os.environ.get('TG_TOKEN')
@@ -61,11 +62,74 @@ def subscribe_authorization(id_user, session_key, ip):
     req = requests.get(link)
 
 
+def promo_replace_username(user = None):
+    if user.username:
+        return user.username
+    else:
+        return user.email
+
+
+def promo_replace_oncepromo():
+    promo = models_shop.Promocode.generate_new_promocode()
+    if promo:
+        return promo[0]
+    return None
+
+def promo_replace_balance(user = None):
+    return str(round(user.balance, 2))
+
+
+
+def promo_replace_product(element):
+    lst = element.split('|')
+    while len(lst) <= 2:
+        lst.append('')
+    product = {'id':lst[1], 'type':lst[2]}
+    try:
+        product_info = models_shop.Product.objects.get(pk = product['id'])
+        if product['type'] == 'name':
+            return product_info.title
+        elif product['type'] == 'oldprice':
+            return str(product_info.old_price)
+        elif product['type'] == 'price':
+            return str(product_info.price)
+        elif product['type'] == 'link':
+            return f'{os.environ.get("LINK_SITE")}{product_info.get_absolute_url()}'
+    except models_shop.Product.DoesNotExist:
+        return None
+
+
+def replace_text(text, user = None):
+    origin_text = text
+    r = re.findall(r'(\{\% .*? \%\})', origin_text)
+    for i in r:
+        el = re.search(r'{% (.*?) %}', i)
+        if el:
+            element = el.group(1)
+            name_element = element.split('|')[0]
+            if name_element == 'username':
+                repl = promo_replace_username(user = user)
+            elif name_element == 'oncepromo':
+                repl = promo_replace_oncepromo()  
+            elif name_element == 'product':
+                repl = promo_replace_product(element)
+            elif name_element == 'balance':
+                repl = promo_replace_balance(user = user)
+            if not repl:
+                repl = ''
+            origin_text = origin_text.replace(i, repl)
+            
+    return origin_text
+        
+
+
+
 def subscribe_promo(text_msg):
     users = Subscribe.objects.filter(is_promo = True)
-    message = text_msg
     for user in users:
         id_tg = user.user.id_tg
+        message = replace_text(text_msg, user = user.user)
+        
         link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message[:200]}'
         req = requests.get(link)
         print(req.json())

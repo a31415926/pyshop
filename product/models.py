@@ -74,6 +74,11 @@ class Product(models.Model):
             print(self.filetelegram_set.all().delete())
         super(Product, self).save(*args, **kwargs)
     
+
+    def get_absolute_url(self):
+        return reverse('product_page', args=[self.id])
+
+
     def get_list_tg_sub(self, type_sub):
         lst = []
         items = []
