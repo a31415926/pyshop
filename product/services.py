@@ -17,6 +17,10 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 
+from shop.storage_backends import MediaStorage
+from django.core.files.base import ContentFile
+
+
 
 
 class Basket:
@@ -140,6 +144,12 @@ class ProductServices:
                         'Старая цена':item.old_price,
                         'Категория':';'.join(lst_categories),
                     })
+
+            csv_file = MediaStorage().save(name = 'export.csv', content = ContentFile(open('export.csv', 'rb').read()))
+            if csv_file:
+                return MediaStorage().url(csv_file)
+            else:
+                return None
         elif type_file == 'xlsx':
             workbook = xlsxwriter.Workbook('price.xlsx')
             worksheet = workbook.add_worksheet()
@@ -186,6 +196,11 @@ class ProductServices:
                 worksheet.write(row, col + 7, cat)
                 row += 1
             workbook.close()
+            xlsx_file = MediaStorage().save(name = 'price.xlsx', content = ContentFile(open('export.csv', 'rb').read()))
+            if xlsx_file:
+                return MediaStorage().url(xlsx_file)
+            else:
+                return None
 
 
     def data_preparation_edit_price(lst_data) -> dict :

@@ -348,8 +348,13 @@ def export_products(request):
     template = 'product/export.html'
     context = {}
     if request.method == 'POST':
+        data_response = {}
         type_file = request.POST.get('type', 'csv')
-        services.ProductServices.export_to_file(type_file)
+        export_file = services.ProductServices.export_to_file(type_file)
+        if export_file:
+            data_response['success'] = export_file            
+        return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
     return render(request, template, context)
 
 def import_products(request):
