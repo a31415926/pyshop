@@ -16,6 +16,9 @@ import os
 from django.db.models import Sum
 from product import parser_rozetka
 import re
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  
+
+
 
 def shop_main_page(request):
     categories = Categories.objects.all()
@@ -25,6 +28,32 @@ def shop_main_page(request):
 def category_page(request, pk):
     category = Product.objects.filter(cid=pk)
     return render(request, 'product/category_page.html', context={'products':category})
+
+
+def all_product_page(request):
+    all_product = Product.objects.all().order_by('-date_add')
+    paginator = Paginator(all_product, 20)
+    page = 1
+    if request.method == 'POST':
+        responce = {}
+        page=request.POST.get('page', 1)
+        try:  
+            products = paginator.page(page)  
+        except PageNotAnInteger:  
+            # Если страница не является целым числом, поставим первую страницу  
+            products = paginator.page(1)  
+        except EmptyPage:  
+            # Если страница больше максимальной, доставить последнюю страницу результатов  
+            products = paginator.page(paginator.num_pages)
+        responce['success'] = convert_html.list_products(products)
+        responce['pagination'] = convert_html.pagination(products)
+        return HttpResponse(json.dumps(responce), content_type='applicaion/json')
+    else:
+        products = paginator.page(page) 
+    all_product_html = convert_html.list_products(products)
+    pagination = convert_html.pagination(products)
+    return render(request, 'product/all_product_page.html', context={'pagination':pagination, 'products':all_product_html, 'page':page})
+
 
 def product_page(request, pk):
     context = {}

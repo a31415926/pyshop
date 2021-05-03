@@ -13,6 +13,36 @@ def viewed_products(data):
     return responce_html
 
 
+def list_products(data):
+    responce_html = ''
+    for product in data:
+        responce_html += (
+            f'<div class="card mb-3" style="flex:25%">'
+            f'<div class="card-body">'
+            f'<h5 class="card-title"><a href="/shop/product/{product.id}">{product.title}</a></h5>'
+            f'<p class="card-text">{product.price}</p>'
+            f'<input type="number" step="1" min=1 name="cnt" start="1" value="1" id="cnt_product_{product.id}">'
+            f'<span class="btn_basket_{product.id}"><button type="submit" onclick="add2basket({product.id})" id="btn_add2basket">Добавить в корзину</button></span>'
+            '</div></div>'            
+        )
+    return responce_html
+
+
+def pagination(item, func='spage'):
+    html_result = ''
+    html_result += '<span class="step-links">'
+    if item.has_previous():  
+         html_result += f'<a href="#" onclick="{func}({item.previous_page_number()})">Previous</a>'
+    
+    html_result+='<span class="current">'
+    html_result+=f'Page {item.number} of {item.paginator.num_pages}.'  
+    html_result+='</span>'  
+    if item.has_next:
+        html_result+=f'<a href="#" onclick="{func}({item.next_page_number()})">Next</a>'  
+    html_result+='</span>'
+    return html_result
+
+
 def my_wishlist(data):
     responce_html = ''
     for item in data:

@@ -4,6 +4,7 @@ from product.views import *
 
 urlpatterns = [
     path('shop/', shop_main_page, name='main_page'),
+    path('shop/all/', all_product_page, name='all_product_page'),
     path('shop/basket/', basket, name='basket_page'),
     path('shop/category/<int:pk>/', category_page, name='category_page'),
     path('shop/currency', select_curr, name='category_page'),
