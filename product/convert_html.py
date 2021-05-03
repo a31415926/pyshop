@@ -37,7 +37,7 @@ def pagination(item, func='spage'):
     html_result+='<span class="current">'
     html_result+=f'Page {item.number} of {item.paginator.num_pages}.'  
     html_result+='</span>'  
-    if item.has_next:
+    if item.has_next():
         html_result+=f'<a href="#" onclick="{func}({item.next_page_number()})">Next</a>'  
     html_result+='</span>'
     return html_result
