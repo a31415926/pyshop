@@ -1,10 +1,15 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from accounts.managers import CustomUserManager
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.authtoken.models import Token
+
+
+courier_model = Group.objects.get_or_create(name = 'Courier')
+user_model = Group.objects.get_or_create(name = 'User')
+moder_model = Group.objects.get_or_create(name = 'Moder')
 
 
 class CustomUser(AbstractUser):

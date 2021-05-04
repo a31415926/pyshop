@@ -17,6 +17,7 @@ from django.db.models import Sum
 from product import parser_rozetka
 import re
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  
+from django.contrib.auth.models import Group
 
 
 def all_links(request):
@@ -209,6 +210,7 @@ def all_invoices(request):
     context = {}
     filter_order = {}
     date_default = {}
+    context['all_couriers'] = Group.objects.get(name='Courier').user_set.all()
     if request.method == 'POST':
         data = request.POST
         if data.get('filter'):
@@ -627,5 +629,28 @@ def parser_rozetka_view(request):
         else:
             parser_rozetka.get_all_ids_goods(search_category[1])
             responce = {'success':'Материалы украли))'}
+
+        return HttpResponse(json.dumps(responce), content_type='applicaion/json')
+
+
+def select_courier(request):
+    if request.method == 'POST':
+        data = request.POST
+        responce = {}
+        print(data)
+        try:
+            order = Order.objects.get(pk=data['order'])
+            if data.get('courier') == '0':
+                order.courier = None
+                order.save()
+            else:
+                courier = Group.objects.get(name='Courier').user_set.get(pk=data['courier'])
+                order.courier = courier
+                order.save()
+            responce = {'success':'Сохранено'}
+        except models.CustomUser.DoesNotExist:
+            responce = {'error':'User not found'}
+        except Order.DoesNotExist:
+            responce = {'error':'Order not found'}
 
         return HttpResponse(json.dumps(responce), content_type='applicaion/json')

@@ -300,6 +300,11 @@ class Order(models.Model):
     cost_of_delivery = models.FloatField(default=0, verbose_name='Стоимость доставки')
     is_paid = models.BooleanField(default=False, verbose_name='Было ли списание средств.')
     delivery_department = models.CharField(null=True, blank=True, verbose_name='Информация об адресе доставки.', max_length=400)
+    courier = models.ForeignKey(CustomUser, on_delete = models.PROTECT, blank = True, null = True, verbose_name='Курьер', related_name = 'courier')
+    phone_number = models.CharField(default='', null = True, blank = True, verbose_name = 'Номер телефона', max_length = 20)
+    full_name = models.CharField(default='', null = True, blank = True, max_length=150, verbose_name= 'Адрес доставки')
+    notes = models.CharField(default = '', null = True, blank = True, max_length = 300, verbose_name = 'Комментарий к заказу')
+
 
 
     class Meta:

@@ -34,6 +34,7 @@
         <th scope="col">стоимость доставки в валюте</th>
         <th scope="col">сумма к оплате</th>
         <th scope="col">status</th>
+        <th scope="col">Курьер</th>
       </tr>
     </thead>
     <tbody>
@@ -57,10 +58,39 @@
                     {% endfor %}
             </select></form>
         </td>
+        <td>
+            <select name="" id="select_courier_order_{{invoice.pk}}">
+              <option value="0">Не задан</option>
+              {% for courier in all_couriers %}
+              <option value="{{courier.pk}}" {% if invoice.courier == courier %}selected{%endif%}>{{courier.email}}</option>
+              {%endfor%}
+            </select>
+            <button id='btn_courier_{{invoice.pk}}' onclick="select_courier({{invoice.pk}})">OK</button>
+      </td>
         </tr>
         {%endfor%}
         
         </tbody>
     </table>
+<script>
 
+  function select_courier(id_order){
+    var id_courier = $('#select_courier_order_'+id_order).val()
+    $.ajax({
+      type: 'POST', url: '{% url "select_courier" %}',
+            data:{'csrfmiddlewaretoken':scrf_token, 'order':id_order, 'courier':id_courier,},
+            dataType: 'json',
+            cache: false,
+            success: function(data){
+              
+                if (data.success){
+                  $('#btn_courier_'+id_order).after(data.success);
+                }
+                else{
+                  $('#btn_courier_'+id_order).after(data.error);
+                }
+            }
+    })
+  }
+  </script>
 {% endblock %}

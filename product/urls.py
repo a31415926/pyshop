@@ -23,6 +23,7 @@ urlpatterns = [
     path('shop/product/<int:pk>/', product_page, name='product_page'),
     path('shop/rating_product/', rating_product, name='rating_product'),
     path('shop/wishlist/', wishlist, name = 'wishlist'),
+    path('shop/select_courier/', select_courier, name = 'select_courier'),
     path('shop/subeditprice/', subeditprice, name = 'subeditprice'),
     path('shop/subactivateproduct/', subactivateproduct, name = 'subactivateproduct'),
     path('shop/parser_rozetka/', parser_rozetka_view, name='parser_rozetka'),

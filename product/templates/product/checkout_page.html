@@ -35,8 +35,12 @@
     </span>
     <br>
   {%endfor%}
-  PROMO:  <input type="text" name ='promo_code' id='promo_code'><button type="button" onclick="is_promo()" id="btn_promo">Проверить</button><br>
+  PROMO:  <input type="text" name ='promo_code' id='promo_code'><button type="button" onclick="is_promo()" id="btn_promo">Проверить</button><br><br>
   <input type='hidden' id ='delivery_department' name="delivery_department" value=''>
+
+  Номер телефона: <input type="text" name = 'phone_number'><br><br>
+  ФИО: <input type="text" name = 'full_name'><br><br>
+  Комментарий: <br><textarea name = 'notes' rows = "5" cols="45"></textarea><br>
   <button type="submit">Оформить</button>
   </form>
   <div id="sum_info">
