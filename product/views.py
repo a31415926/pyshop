@@ -271,6 +271,9 @@ def get_invoice(request, pk):
     context['order'] = order
     context['goods'] = goods
     context['digital'] = digital_links
+    if order.delivery_department:
+        wh_info = DeliveryWarehousesNP.objects.get(ref_warehouse = order.delivery_department)
+        context['delivery_department'] = f'{wh_info.city.city}, <br>{wh_info.description_ru}'
     return render(request, template, context=context)
 
 
@@ -654,3 +657,11 @@ def select_courier(request):
             responce = {'error':'Order not found'}
 
         return HttpResponse(json.dumps(responce), content_type='applicaion/json')
+
+
+def courier_page(request):
+    context = {}
+    context['all_invoices'] = Order.objects.filter(courier = request.user)
+    context['all_status'] = forms.ChangeStatusOrder()
+
+    return render(request, 'product/courier_page.html', context)

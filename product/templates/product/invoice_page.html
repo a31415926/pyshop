@@ -2,7 +2,17 @@
 {% load mathfilters %}
 
 {% block content %}
-    Status order - {{order.status}}
+    Статус заказа - {{order.get_status_display}}<br>
+    Курьер - {% if order.courier %}{{order.courier.email}}{%else%} не задан {%endif%} <br>
+    Промо - {% if order.promo %}{{order.promo}}{%else%} нет {%endif%} <br>
+    Телефон - {% if order.promo %}{{order.promo}}{%else%} нет {%endif%} <br>
+    ФИО - {% if order.full_name %}{{order.full_name}}{%else%} нет {%endif%} <br>
+    Комментарий - {% if order.notes %}{{order.notes}}{%else%} нет {%endif%} <br>
+    Способ доставки - {{ order.delivery_method }} <br>
+    {% if delivery_department %}{{delivery_department|safe}} <br><br> {%endif%}
+    Стоимость доставки - {{ order.cost_of_delivery }} <br>
+
+    
     <table class="table">
         <thead>
           <tr>

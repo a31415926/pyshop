@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 
 
 class SignUpView(generic.CreateView):
-    model = User
+    model = CustomUser()
     template_name = 'accounts/signup.html'
     form_class = RegisterUserForm
     success_url = reverse_lazy('main_page')
@@ -22,8 +22,8 @@ class SignUpView(generic.CreateView):
         form_valid = super().form_valid(form)
         email = form.cleaned_data['email']
         password = form.cleaned_data['password']
-        #form_valid.groups.add(Group.objects.get(name=User))
         aut_user = authenticate(email=email, password=password)     
+        aut_user.groups.add(Group.objects.get(name='User'))
         login(self.request, aut_user)
         return form_valid
     
