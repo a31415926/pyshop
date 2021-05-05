@@ -175,6 +175,7 @@ def checkout_page(request):
     delivery = Delivery.objects.all()
     if request.method == 'POST':
         data = request.POST.copy()
+        responce = {}
         id_delivery = data.get('delivery')
         order_delivery = Delivery.objects.get(pk=id_delivery)
         order_currency = Currency.objects.get(code = request.session.get('curr_id', 'UAH'))
@@ -203,8 +204,13 @@ def checkout_page(request):
                 }
                 OrderItem.add_item(item)
                 new_order.recalc_order()
+            responce = {'success':True, 'msg':f'Заказ оформлен.<br><a href="{reverse("invoice_page", kwargs={"pk":new_order.id})}">Перейти на страницу заказа</a>'}
+        else:
+            responce = {'success':False, 'msg':create_order.errors}
 
-            return redirect('invoice_page', new_order.id)  
+        return HttpResponse(json.dumps(responce), content_type='applicaion/json')
+    
+        #return redirect('invoice_page', new_order.id)  
 
     return render(request, 'product/checkout_page.html', context={'products':basket, 'total_cost':total_cost, 'all_delivery':delivery})
 

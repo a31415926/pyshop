@@ -1,4 +1,3 @@
-from shop.settings import SITE_URL
 from accounts.models import *
 from product import models as models_shop
 import requests
@@ -40,7 +39,7 @@ def subscribe_create_order(id_user, id_order, url_order):
     except Subscribe.DoesNotExist:
         return False
     
-    message = f'Вы оформили заказ с ID {id_order}\nСсылка на заказ: {SITE_URL}{url_order}'
+    message = f'Вы оформили заказ с ID {id_order}\nСсылка на заказ: {os.environ.get("LINK_SITE")}{url_order}'
     id_tg = user.user.id_tg
     link = f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage?chat_id={id_tg}&parse_mode=HTML&text={message}'
     req = requests.get(link)
