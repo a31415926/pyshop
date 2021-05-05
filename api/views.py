@@ -10,6 +10,7 @@ from rest_framework.authentication import SessionAuthentication
 
 from rest_framework.response import Response
 from django.http import Http404
+from django.db import utils
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -234,7 +235,71 @@ class WishlistAPI(APIView):
         Wishlist.objects.filter(**data).delete()
         context = {'success':True, 'msg':msg}
         return Response(context)
+
+
+
+class CategoryAPI(APIView):
+
+    def get(self, request, format = None):
+        context = {}
+        categories = Categories.objects.all()
+        serializer = serializers.CategorySerializer(categories, many = True)
+        context = serializer.data
+        return Response(context)
             
+
+    
+    def post(self, request, format = None):
+        context = {}
+        name = request.POST.get('name')
+        if not name:
+            context = {'success':False, 'msg':'Не задан обязательный параметр'}
+            return Response(context)
+        else:
+            new_cat, create_cat = Categories.objects.get_or_create(name = name)
+            if not create_cat:
+                context = {'success':False, 'msg':'Категория с таким названием уже есть'}
+            else:
+                context = {'success':True, 'info':{}}
+                context['info'] = {'id':new_cat.pk, 'name':new_cat.name}
+            return Response(context)
+
+    
+    def put(self, request, format = None):
+        context = {}
+        id_category = request.POST.get('id')
+        name_category = request.POST.get('name')
+        if not id_category or not name_category:
+            context = {'success':False, 'msg':'Не задан обязательный параметр'}
+        else:
+            try:
+                category = Categories.objects.get(pk=id_category)
+                category.name = name_category
+                category.save()
+                context = {'success':True, 'msg':'Изменения сохранены'}
+            except Categories.DoesNotExist:
+                context = {'success':False, 'msg':'ID введен неверно'}
+            except utils.IntegrityError:
+                context = {'success':False, 'msg':'Категория с таким названием уже есть'}
+
+        return Response(context)
+
+
+    def delete(self, request, format = None):
+        context = {}
+        id_category = request.POST.get('id')
+        if id_category:
+            try:
+                category = Categories.objects.get(pk = id_category).delete()
+                context = {'success':True, 'msg':'Категория удалена'}
+            except Categories.DoesNotExist:
+                context = {'success':False, 'msg':'Категория не найдена'}
+
+        return Response(context)
+
+
+
+
 
 
 class ProductAPI(APIView):
