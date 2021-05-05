@@ -63,3 +63,10 @@ class BasketSerializer(serializers.ModelSerializer):
             item.qty += validated_data.get('qty')
             item.save()
         return item
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    product_info = ProductSerializer(source='product', read_only=True)
+    class Meta:
+        model = Wishlist
+        fields = ['product_info',]

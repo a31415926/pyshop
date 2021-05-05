@@ -468,6 +468,11 @@ class Wishlist(models.Model):
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
 
 
+    class Meta:
+        permissions = (
+            ('show_all_wishlist', 'Просматривать список желаний других пользователей'),
+        )  
+
     def save(self, *args, **kwargs):
         if Wishlist.objects.filter(user=self.user, product=self.product).exists():
             return

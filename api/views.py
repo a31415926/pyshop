@@ -178,6 +178,64 @@ class Basket(APIView):
         return Response(context)
 
 
+class WishlistAPI(APIView):
+
+    def get_wishlist(self, user):
+        return Wishlist.objects.filter(user=user)
+
+    def get(self, request, format = None):
+        context = {}
+        data = request.GET
+        show_all = request.user.has_perm('product.show_all_wishlist')
+        if data.get('user_id') and show_all:
+            try: 
+                user = CustomUser.objects.get(id = data.get('user_id'))
+                wishlist = self.get_wishlist(user)
+            except CustomUser.DoesNotExist:
+                user = request.user
+                context = {'success':False, 'msg':'user not found'}
+                return Response(context)
+        else:
+            wishlist = self.get_wishlist(request.user)
+        serializer = serializers.WishlistSerializer(wishlist, many = True)
+        context['success'] = serializer.data
+        return Response(context)
+
+
+    def post(self, request, format = None):
+        context = {}
+        data_request = request.POST
+        id_product = data_request.get('id')
+        try:
+            product = Product.objects.get(pk = id_product)
+            product.add_to_wishlist(user = request.user)
+            context = {'success': True, 'msg': 'Товар добавлен в список желаний'}
+        except Product.DoesNotExist:
+            context = {'success':False, 'msg':'product not found'}
+        
+        return Response(context)
+
+    def delete(self, request, format = None):
+        context = {}
+        data_request =request.POST
+        data = {}
+        data['user'] = request.user
+        id_product = data_request.get('id') 
+        if id_product:
+            msg = 'Товар удален из списка желаний'
+            try:
+                product = Product.objects.get(pk = id_product)
+                data['product'] = product
+            except Product.DoesNotExist:
+                context = {'success': False, 'msg':'Товар не найден'}
+                return Response(context)
+        else:
+            msg = 'Список желаний очищен'
+        Wishlist.objects.filter(**data).delete()
+        context = {'success':True, 'msg':msg}
+        return Response(context)
+            
+
 
 class ProductAPI(APIView):
 
