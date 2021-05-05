@@ -127,6 +127,11 @@ def basket(request):
         check_promo = request.POST.get('promocode')
         data_response={}
         product_cnt = request.POST.get('cnt', 1)
+        if int(product_cnt) < 1:
+            data_response={'error':'Минимальное количество - 1'}
+            return HttpResponse(json.dumps(data_response), content_type = 'application/json')
+
+
         product_cnt = 1 if not product_cnt else product_cnt   
         if type_basket == 'add':
             basket = services.Basket.add2basket(basket, product_id, product_cnt, user_id=request.user.id)
@@ -549,7 +554,7 @@ def calc_delivery(request):
 
         #стоимость переводим в курс
         if data_response.get('cost'):
-            cost_in_curr = data_response.get("cost") * request.session["rate_curr"]
+            cost_in_curr = round(data_response.get("cost") * request.session["rate_curr"], 2)
             data_response['cost'] = f'{cost_in_curr} {request.session["disp_curr"]}'
 
     return HttpResponse(json.dumps(data_response), content_type='application/json')

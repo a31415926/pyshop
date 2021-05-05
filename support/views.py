@@ -62,6 +62,7 @@ def answer_ticket(request, pk):
     template = 'support/answer_ticket.html'
     ticket = get_object_or_404(Ticket, pk = pk)
     context = {}
+    context['form'] = forms.SupportAnswer()
     context['messages'] = ticket.ticketmessage_set.all()
     if request.method == 'POST':
         data = request.POST

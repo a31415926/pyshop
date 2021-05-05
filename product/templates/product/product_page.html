@@ -20,19 +20,19 @@
     {%endif%} <br><br>
         <div class="form_add_basket">
             <input type="number" step='1' min=1 name='cnt' start='1' value="1" id="cnt_product">
-            <button type='submit' onclick="add2basket('{{product.id}}')" id="btn_add2basket">Добавить в корзину</button>
+            <button type='submit' onclick="add2basket('{{product.id}}')" id="btn_add2basket">Добавить в корзину</button> <br><br>
             {%if request.user.is_authenticated%}
                 {% if is_wishlist %}
                     <button type="button" onclick="wishlist('{{product.id}}', 'del')" id='btn_wishlist'>Удалить из вишлиста</button>
                 {%else%}
                     <button type="button" onclick="wishlist('{{product.id}}', 'add')" id='btn_wishlist'>Добавить в вишлист</button>
-                {%endif%}
+                {%endif%} <br> <br>
                 {% if is_sub_edit_price %}
                     <div>Вы подписаны на изменение цены</div>
                     <button type="button" onclick="subeditprice('{{product.id}}', 'del')" id='btn_subeditprice'>Отписаться</button>
                 {%else%}
                     <button type="button" onclick="subeditprice('{{product.id}}', 'add')" id='btn_subeditprice'>Подписаться на изменение цены</button>
-                {%endif%}
+                {%endif%} <br><br>
                 {% if product.stock == 0 %}
                     {% if is_sub_active_product %}
                         <div>Мы сообщим, когда товар будет в наличии</div>
@@ -40,7 +40,7 @@
                     {%else%}
                         <button type="button" onclick="subactivateproduct('{{product.id}}', 'add')" id='btn_subactivateproduct'>Сообщить, когда товар будет в наличии.</button>
                     {%endif%}
-                {%endif%}
+                {%endif%} <br><br>
 
 
             {%endif%}
@@ -77,6 +77,12 @@
                 success: function(data){
                     if (data.success){
                         var $item = $('<span class="msg">'+ data.success +'</span>');
+                        $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
+                                $item.remove();
+                        });
+                    }
+                    else{
+                        var $item = $('<span class="msg">'+ data.error +'</span>');
                         $item.appendTo('.form_add_basket').delay(4000).slideUp(500, function(){
                                 $item.remove();
                         });
