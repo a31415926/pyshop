@@ -299,10 +299,24 @@ class CategoryAPI(APIView):
 
 
 
-
-
-
 class ProductAPI(APIView):
+
+    def get(self, request, format = None):
+        context = {}
+        id_product = request.GET.get('id')
+        if id_product:
+            try:
+                product = Product.objects.get(pk = id_product)
+                serializer = serializers.ProductSerializer(product)
+                context = serializer.data
+            except Product.DoesNotExist:
+                context = {'success':False, 'msg':'Product not found'}
+        else:
+            context = {'success':False, 'msg':'Не указан обязательный параметр'}
+        return Response(context)
+
+
+class ProductListAPI(APIView):
 
     def get(self, request, format=None):
         filter_attr = request.GET

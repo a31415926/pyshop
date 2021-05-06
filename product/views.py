@@ -127,6 +127,7 @@ def basket(request):
         check_promo = request.POST.get('promocode')
         data_response={}
         product_cnt = request.POST.get('cnt', 1)
+        type_add2basket = request.POST.get('type_basket', 'add')
         if int(product_cnt) < 1:
             data_response={'error':'Минимальное количество - 1'}
             return HttpResponse(json.dumps(data_response), content_type = 'application/json')
@@ -134,8 +135,14 @@ def basket(request):
 
         product_cnt = 1 if not product_cnt else product_cnt   
         if type_basket == 'add':
-            basket = services.Basket.add2basket(basket, product_id, product_cnt, user_id=request.user.id)
-            data_response = {'success': f'Добавлено в корзину {product_cnt} товаров'}
+            basket = services.Basket.add2basket(basket, product_id, product_cnt, user_id=request.user.id, _type = type_add2basket)
+            if type_add2basket == 'add':
+                data_response = {'success': f'Добавлено в корзину {product_cnt} товаров'}
+            elif type_add2basket == 'edit':
+                total_cost = round(sum([i['qty'] * i['price'] for i in basket.values()]), 2)
+                total_cost_resp = f'{total_cost *  request.session["rate_curr"]} {request.session["disp_curr"]}'
+                data_response = {'success':True, 'total_cost':total_cost_resp}
+                
         elif type_basket == 'del':
             basket = services.Basket.del2basket(basket, product_id, request.user.id)
             html_result = ""
@@ -145,7 +152,7 @@ def basket(request):
                 html_result += f'<tr><th scope="row">{count_items}</th>'
                 html_result += f'<td><a href=\'{reverse("product_page", kwargs={"pk":id_product})}\'">{product_val["title"]}</a></td>'
                 html_result += f'<td>{product_val["price"] * request.session["rate_curr"]}</td>'
-                html_result += f'<td>{product_val["qty"]}</td>'
+                html_result += f'<td><input onchange = "edit_qty({id_product}, this.value)" type="number" value="{product_val["qty"]}"></td>'
                 html_result += f'<td><button type=\'submit\' onclick="del_basket({id_product})">X</button></td>'
                 html_result += '</tr>'
                 count_items+=1

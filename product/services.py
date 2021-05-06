@@ -42,7 +42,7 @@ class Basket:
                 full_sum += i.qty * i.price
         return basket
     
-    def add2basket(basket, product_id, qty, user_id = None):
+    def add2basket(basket, product_id, qty, user_id = None, _type = 'add'):
         product = get_object_or_404(Product, id = product_id)
         product_info = model_to_dict(product)
         del(product_info['cid'])
@@ -51,15 +51,20 @@ class Basket:
         if not basket.get(str(product_id)):
             basket[str(product_id)] = product_info
         now_qty = basket[str(product_id)].get('qty', 0)
-        basket[str(product_id)]['qty'] = now_qty + int(qty)
+        end_qty = 1
+        if _type == 'add':
+            end_qty = now_qty + int(qty)
+        elif _type == 'edit':
+            end_qty = int(qty)
+        basket[str(product_id)]['qty'] = end_qty
         if user_id:
             bsk, create_basket = BasketItem.objects.get_or_create(
                 user = CustomUser.objects.get(id = user_id),
                 product = product,
-                defaults = {'qty' : now_qty + int(qty),
+                defaults = {'qty' : end_qty,
                     'price' : product.price,})
             if not create_basket:
-                bsk.qty = now_qty + int(qty)
+                bsk.qty = end_qty
                 bsk.save()
         return basket
 
