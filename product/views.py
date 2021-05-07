@@ -359,6 +359,7 @@ def edit_price_in_category(request):
         data_for_edit = services.ProductServices.data_preparation_edit_price(data)
         products = services.ProductServices.get_all_products_in_categories(data_for_edit['lst_cats_id'])
         services.ProductServices.edit_price_products(
+            products=products,
             type_edit = data_for_edit['type_edit'], 
             value_edit = data_for_edit['value_edit'], 
             is_edit_old_price = data_for_edit['is_edit_old_price']
