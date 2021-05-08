@@ -5,7 +5,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
 from django.shortcuts import HttpResponse, get_object_or_404, render, HttpResponseRedirect
 import json
-from accounts import subscribe
+from accounts import tasks
 from accounts.models import CustomUser
 from accounts.forms import *
 from django.contrib.auth.decorators import login_required
@@ -44,7 +44,7 @@ class LoginView(LoginView):
             ip = self.request.META.get('REMOTE_ADDR')
         ssid = self.request.session.session_key
         uid = self.request.user.id 
-        subscribe.subscribe_authorization(uid, ssid, ip)
+        tasks.send_authorizations.delay(uid, ssid, ip)
         return HttpResponseRedirect(self.get_success_url())
 
 class UserLogoutView(LogoutView):
@@ -64,7 +64,7 @@ def mailing_promotions(request):
     if request.method == 'POST':
         data = request.POST
         msg_promotions = data.get('text_promotions')
-        subscribe.subscribe_promo(msg_promotions)
+        tasks.send_promo.delay(msg_promotions)
         return HttpResponseRedirect(request.path_info)
     return render(request, template)
 

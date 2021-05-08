@@ -52,7 +52,7 @@ def subscribe_authorization(id_user, session_key, ip):
         user = Subscribe.objects.get(user_id = id_user, is_authorization = True)
     except Subscribe.DoesNotExist:
         return False
-    
+
     ip_info = geo_ip_info(ip)
     str_ip_info = '/'.join(ip_info.values())
     message = f'В ваш аккаунт был выполнен вход с IP-адреса {ip} ({str_ip_info})\nЕсли это были не вы - нажмите кнопку ниже.'
@@ -74,9 +74,9 @@ def promo_replace_oncepromo():
         return promo[0]
     return None
 
+
 def promo_replace_balance(user = None):
     return str(round(user.balance, 2))
-
 
 
 def promo_replace_product(element):
@@ -119,8 +119,6 @@ def replace_text(text, user = None):
             origin_text = origin_text.replace(i, repl)
             
     return origin_text
-        
-
 
 
 def subscribe_promo(text_msg):
