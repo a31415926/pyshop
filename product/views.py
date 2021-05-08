@@ -18,6 +18,8 @@ from product import parser_rozetka
 import re
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  
 from django.contrib.auth.models import Group
+from product import tasks
+from accounts import tasks as acc_tasks
 
 
 def all_links(request):
@@ -202,7 +204,7 @@ def checkout_page(request):
         if create_order.is_valid() and basket:
             new_order = create_order.save()
             if request.user:
-                subscribe.subscribe_create_order(request.user.id, new_order.id, new_order.get_absolute_url())
+                acc_tasks.send_create_order.delay(request.user.id, new_order.id, new_order.get_absolute_url())
             for good in basket.values():
                 item = {
                     'product':Product.objects.get(pk=good['id']),
@@ -357,9 +359,9 @@ def edit_price_in_category(request):
     if request.method == 'POST':
         data = request.POST
         data_for_edit = services.ProductServices.data_preparation_edit_price(data)
-        products = services.ProductServices.get_all_products_in_categories(data_for_edit['lst_cats_id'])
-        services.ProductServices.edit_price_products(
-            products=products,
+        #products = services.ProductServices.get_all_products_in_categories(data_for_edit['lst_cats_id'])
+        tasks.edit_price_in_category.delay(
+            lst_cats=data_for_edit['lst_cats_id'],
             type_edit = data_for_edit['type_edit'], 
             value_edit = data_for_edit['value_edit'], 
             is_edit_old_price = data_for_edit['is_edit_old_price']

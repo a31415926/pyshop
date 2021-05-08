@@ -243,8 +243,8 @@ class ProductServices:
         return Product.objects.filter(cid__pk__in = lts_categories)
 
 
-    def edit_price_products(products, type_edit: str, value_edit: float, is_edit_old_price = False):
-
+    def edit_price_products(lst_cats, type_edit: str, value_edit: float, is_edit_old_price = False):
+        products = ProductServices.get_all_products_in_categories(lst_cats)
         for product in products:
             new_price = product.price
             if type_edit == 'fix':
