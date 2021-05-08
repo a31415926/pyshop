@@ -13,7 +13,6 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '!%c$$78v36_ah)-1j8(hxg6u@*fk2*jnut5m$*z&fr^=jsdq%u'
-TG_TOKEN = '1729761851:AAHRK8aaNbAMuOj0qis-xOeB9p_rHZu1TPg'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 SITE_URL = '127.0.0.1:8000'
