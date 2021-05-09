@@ -29,10 +29,18 @@ class MatrixSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'items']
 
 
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Categories
+        fields = ['id', 'name',]
+
+
 class ProductSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(source = 'cid', many=True)
     class Meta:
         model = Product
-        fields = ['id', 'title', 'desc', 'vendor_code', 'price', 'rating']
+        fields = ['id', 'category', 'title', 'desc', 'vendor_code', 'price', 'rating']
 
 
 class BasketSerializer(serializers.ModelSerializer):
@@ -70,10 +78,3 @@ class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wishlist
         fields = ['product_info',]
-
-
-class CategorySerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Categories
-        fields = ['id', 'name',]

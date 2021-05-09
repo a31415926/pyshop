@@ -325,27 +325,31 @@ class DefaultPagination(pagination.PageNumberPagination):
         return Response(data)
 
 
-class CharFilter(drf_filters.BaseInFilter, drf_filters.CharFilter):
+class CharFilterDef(drf_filters.BaseInFilter, drf_filters.CharFilter):
     pass
 
 
 class ProductFilter(drf_filters.FilterSet):
     price = drf_filters.RangeFilter()
     rating = drf_filters.RangeFilter()
-    title = CharFilter(field_name = 'title', lookup_expr='in')
+    title = CharFilterDef(field_name = 'title', lookup_expr='in')
+    in_title = drf_filters.CharFilter(field_name = 'title', lookup_expr='contains')
+    in_desc = drf_filters.CharFilter(field_name = 'desc', lookup_expr='contains')
+    category = drf_filters.BaseInFilter(field_name = 'cid__pk', lookup_expr='in')
 
     class Meta:
         model = Product
-        fields = ['price', 'rating', 'title',]
+        fields = ['price', 'rating', 'title', 'in_title', 'in_desc', 'category',]
 
 
 class ProductListAPI(generics.ListAPIView):
     serializer_class = serializers.ProductSerializer
     filter_backends = (drf_filters.DjangoFilterBackend, filters.SearchFilter,)
     filterset_class = ProductFilter
+    filter_fields = ['price',]
     pagination_class = DefaultPagination
 
-    search_fields = ['title',]
+    search_fields = ['title','desc',]
 
     def get_queryset(self):
-        return Product.objects.filter()
+        return Product.objects.filter().order_by('id')
