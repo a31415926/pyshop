@@ -32,7 +32,7 @@ class MatrixSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'brand', 'desc', 'vendor_code', 'price', 'rating']
+        fields = ['id', 'title', 'desc', 'vendor_code', 'price', 'rating']
 
 
 class BasketSerializer(serializers.ModelSerializer):

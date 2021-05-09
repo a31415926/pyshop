@@ -13,13 +13,14 @@ from django.http import Http404
 from django.db import utils
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, filters
 from api import serializers
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets, generics, pagination
 from accounts.models import CustomUser
 from product.models import *
 from django.contrib.sessions.models import Session
 from product import services
+from django_filters import rest_framework as drf_filters
 
 
 @api_view(['POST'])
@@ -315,13 +316,36 @@ class ProductAPI(APIView):
             context = {'success':False, 'msg':'Не указан обязательный параметр'}
         return Response(context)
 
+class DefaultPagination(pagination.PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+    
+    def get_paginated_response(self, data):
+        return Response(data)
 
-class ProductListAPI(APIView):
 
-    def get(self, request, format=None):
-        filter_attr = request.GET
-        filter_product = services.ProductServices.filter_product(filter_attr)
-        product = Product.objects.filter(**filter_product)
-        serializer = serializers.ProductSerializer(product, many=True)
-        context = {'success':serializer.data}
-        return Response(context)
+class CharFilter(drf_filters.BaseInFilter, drf_filters.CharFilter):
+    pass
+
+
+class ProductFilter(drf_filters.FilterSet):
+    price = drf_filters.RangeFilter()
+    rating = drf_filters.RangeFilter()
+    title = CharFilter(field_name = 'title', lookup_expr='in')
+
+    class Meta:
+        model = Product
+        fields = ['price', 'rating', 'title',]
+
+
+class ProductListAPI(generics.ListAPIView):
+    serializer_class = serializers.ProductSerializer
+    filter_backends = (drf_filters.DjangoFilterBackend, filters.SearchFilter,)
+    filterset_class = ProductFilter
+    pagination_class = DefaultPagination
+
+    search_fields = ['title',]
+
+    def get_queryset(self):
+        return Product.objects.filter()
