@@ -7,7 +7,6 @@ from accounts import models
 from product import services
 import json
 import requests
-from accounts import subscribe
 import datetime
 from dotenv import load_dotenv
 from product import convert_html
@@ -394,8 +393,8 @@ def import_products(request):
         is_valid_link = services.ImportSheet.is_correct_link(link_price)
         if type_import == 'import':
             if is_valid_link:
+                tasks.import_from_gsheets.delay(link_price)
                 data_response['success'] = '<b>Выполняется обработка прайса..</b>'
-                services.ImportSheet.import_from_gsheets(link_price)
             else:
                 data_response['error'] = 'Файл по указанной сыслке недоступен.'
         elif type_import == 'preview':

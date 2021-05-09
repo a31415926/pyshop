@@ -8,7 +8,8 @@ load_dotenv()
 import requests
 import os
 from django.utils.crypto import get_random_string
-from accounts.subscribe import subscribe_edit_price, subscribe_active_product, subscribe_get_file_in_order
+from accounts import tasks as acc_tasks
+
 
 class PriceMatrix(models.Model):
     name = models.CharField(max_length=200, default='Name matrix', verbose_name='Название')
@@ -93,9 +94,9 @@ class Product(models.Model):
             items.append(user_sub.pk)
         
         if type_sub == 'edit_price':
-            subscribe_edit_price(lst, self.title, self.price)
+            acc_tasks.send_edit_price.delay(lst, self.title, self.price)
         elif type_sub == 'active_product':
-            subscribe_active_product(lst, self.title, self.price, items)
+            acc_tasks.send_activate_product.delay(lst, self.title, self.price, items)
             
         
     def product_rating(self):
@@ -330,7 +331,7 @@ class Order(models.Model):
             self.user.balance = self.user.balance - self.total_amount
             self.user.save()
             self.save()
-            subscribe_get_file_in_order(self.pk)
+            acc_tasks.send_file_in_order.delay(self.pk)
             return True
         return False
 
