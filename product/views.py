@@ -13,7 +13,6 @@ from product import convert_html
 load_dotenv()
 import os
 from django.db.models import Sum
-from product import parser_rozetka
 import re
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  
 from django.contrib.auth.models import Group
@@ -202,6 +201,10 @@ def checkout_page(request):
 
         if create_order.is_valid() and basket:
             new_order = create_order.save()
+            if data.get('promo'):
+                if data.get('promo').type_promo == 'onceuse':
+                    data.get('promo').status = False
+                    data.get('promo').save()
             if request.user:
                 acc_tasks.send_create_order.delay(request.user.id, new_order.id, new_order.get_absolute_url())
             for good in basket.values():
@@ -650,8 +653,8 @@ def parser_rozetka_view(request):
         if not search_category:
             responce = {'error':'Ссылка введена неверно.'}
         else:
-            parser_rozetka.get_all_ids_goods(search_category[1])
-            responce = {'success':'Материалы украли))'}
+            tasks.parser_rozetka.delay(search_category[1])
+            responce = {'success':'Кража поставлена в очередь))'}
 
         return HttpResponse(json.dumps(responce), content_type='applicaion/json')
 
