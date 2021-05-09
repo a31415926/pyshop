@@ -1,5 +1,4 @@
 from shop.celery import app
-from time import sleep
 from product import services, parser_rozetka
 
 
