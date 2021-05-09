@@ -224,8 +224,9 @@ class Promocode(models.Model):
 
     @classmethod
     def is_promo(cls, promocode):
-        is_promo = cls.objects.filter(code = promocode, status = True)[0]
+        is_promo = cls.objects.filter(code = promocode, status = True)
         if is_promo:
+            is_promo = is_promo[0]
             if is_promo.start_promo:
                 if is_promo.end_promo:
                     if is_promo.start_promo <= date.today() <= is_promo.end_promo:
